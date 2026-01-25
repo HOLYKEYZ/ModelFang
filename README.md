@@ -7,7 +7,7 @@
 
 ---
 
-## 🚀 Key Features
+## Key Features
 
 *   **Graph-Based Attack Engine**: Non-linear attack flows with conditional branching and backtracking.
 *   **Adaptive Strategies**: 6-layer procedural generation (Context Seizure → Escalation → Violation).
@@ -18,7 +18,7 @@
 
 ---
 
-## 🛠️ Installation
+## Installation
 
 ### Prerequisites
 *   Python 3.8+
@@ -39,7 +39,7 @@ cd ..
 
 ---
 
-## ⚙️ Configuration
+## Configuration
 
 1.  **API Keys**: Rename `.env.example` to `.env` (or create it) and add your keys:
     ```ini
@@ -57,7 +57,7 @@ cd ..
 
 ---
 
-## 🖥️ Usage
+## Usage
 
 ### Option A: Analyst Dashboard (Recommended)
 
@@ -90,7 +90,7 @@ python main.py run --attack template:roles --model gemini-pro --context '{"role"
 
 ---
 
-## 📂 Project Structure
+## Project Structure
 
 *   `modelfang/` - Core Python package
     *   `orchestrator/` - Attack execution logic
