@@ -1,4 +1,4 @@
-# ⚔️ ModelFang
+# ModelFang
 ### Advanced AI Red Teaming & LLM Exploitation Framework
 
 <img src="frontend/public/logo.png" width="128" alt="ModelFang Logo" />
