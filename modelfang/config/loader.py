@@ -151,8 +151,14 @@ class ScoringConfig:
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "ScoringConfig":
         """Create ScoringConfig from dictionary."""
+        defaults = {
+            "low": 1.0,
+            "medium": 2.0,
+            "high": 4.0,
+            "critical": 8.0,
+        }
         return cls(
-            severity_weights=data.get("severity_weights", cls.severity_weights),
+            severity_weights=data.get("severity_weights", defaults),
             violation_depth_multiplier=data.get("violation_depth_multiplier", 1.5),
             persistence_multiplier=data.get("persistence_multiplier", 1.2),
             recovery_failure_penalty=data.get("recovery_failure_penalty", 2.0),

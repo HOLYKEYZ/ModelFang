@@ -1,152 +1,111 @@
 """
-Gemini-Style Model Adapter
+Gemini Model Adapter
 
-Skeleton implementation for Google Gemini APIs.
-Actual API calls are not implemented - this is a structural placeholder.
+Adapter for Google's Gemini API via google-generativeai.
 """
 
+import os
+import time
 from typing import Any, Dict, List, Optional
 
-from modelfang.adapters.base import (
-    AdapterError,
-    Message,
-    ModelAdapter,
-    ModelResponse,
-)
+try:
+    import google.generativeai as genai
+    from google.generativeai.types import HarmCategory, HarmBlockThreshold
+except ImportError:
+    genai = None
+
+from modelfang.adapters.base import ModelAdapter, Message, ModelResponse, AdapterError
 
 
 class GeminiAdapter(ModelAdapter):
-    """
-    Adapter for Google Gemini API.
-    
-    Supports:
-    - Gemini Pro
-    - Gemini Ultra
-    - Other Gemini model variants
-    """
-    
-    DEFAULT_API_BASE = "https://generativelanguage.googleapis.com/v1beta"
+    """Adapter for Google Gemini API."""
     
     def __init__(
         self,
-        model_name: str,
-        api_base: Optional[str] = None,
+        model_name: str = "gemini-pro",
         api_key: Optional[str] = None,
-        timeout_seconds: int = 60,
-        max_retries: int = 3,
-        project_id: Optional[str] = None,
-        location: str = "us-central1",
-        **kwargs: Any,
+        **kwargs
     ):
-        """
-        Initialize Gemini adapter.
+        if genai is None:
+            raise ImportError("google-generativeai not installed. Run 'pip install google-generativeai'")
+            
+        super().__init__(model_name, api_key=api_key, **kwargs)
         
-        Args:
-            model_name: Gemini model name (e.g., 'gemini-pro', 'gemini-ultra')
-            api_base: API base URL
-            api_key: Google API key
-            timeout_seconds: Request timeout
-            max_retries: Retry count on failure
-            project_id: Optional GCP project ID (for Vertex AI)
-            location: GCP region for Vertex AI
-            **kwargs: Additional options
-        """
-        super().__init__(
-            model_name=model_name,
-            api_base=api_base or self.DEFAULT_API_BASE,
-            api_key=api_key,
-            timeout_seconds=timeout_seconds,
-            max_retries=max_retries,
-            **kwargs,
-        )
-        self.project_id = project_id
-        self.location = location
-    
+        self.api_key = api_key or os.environ.get("GEMINI_API_KEY")
+        if not self.api_key:
+            raise ValueError("GEMINI_API_KEY not found in environment or arguments")
+            
+        genai.configure(api_key=self.api_key)
+        self.model = genai.GenerativeModel(self.model_name)
+        
     def send(
         self,
         messages: List[Message],
         temperature: float = 0.7,
         max_tokens: int = 4096,
-        **kwargs: Any,
+        **kwargs
     ) -> ModelResponse:
-        """
-        Send messages to Gemini API.
+        """Send request to Gemini."""
+        start_time = time.time()
         
-        NOTE: This is a skeleton - actual API calls not implemented.
-        
-        Args:
-            messages: Conversation messages
-            temperature: Sampling temperature
-            max_tokens: Max response tokens
-            **kwargs: Additional parameters
-            
-        Returns:
-            ModelResponse with the model's reply
-        """
-        # Skeleton implementation - would use google-generativeai in production
-        raise AdapterError(
-            "Gemini adapter not yet implemented. "
-            "This is a structural placeholder for the framework."
-        )
-    
-    def get_provider_name(self) -> str:
-        """Return provider name."""
-        return "gemini"
-    
-    def supports_system_prompt(self) -> bool:
-        """Gemini supports system instructions."""
-        return True
-    
-    def supports_streaming(self) -> bool:
-        """Gemini supports streaming responses."""
-        return True
-    
-    def _convert_to_gemini_format(
-        self, 
-        messages: List[Message],
-    ) -> Dict[str, Any]:
-        """
-        Convert standard messages to Gemini API format.
-        
-        Gemini uses a different message structure with 'contents'
-        and 'parts' instead of simple role/content pairs.
-        """
-        contents = []
+        gemini_history = []
+        last_user_message = ""
         system_instruction = None
         
-        for msg in messages:
-            if msg.role == "system":
-                system_instruction = msg.content
-            else:
-                gemini_role = "user" if msg.role == "user" else "model"
-                contents.append({
-                    "role": gemini_role,
-                    "parts": [{"text": msg.content}]
-                })
-        
-        result = {"contents": contents}
-        if system_instruction:
-            result["system_instruction"] = {"parts": [{"text": system_instruction}]}
-        
-        return result
-    
-    def _build_generation_config(
-        self,
-        temperature: float,
-        max_tokens: int,
-        **kwargs: Any,
-    ) -> Dict[str, Any]:
-        """Build generation configuration for Gemini."""
-        config = {
-            "temperature": temperature,
-            "maxOutputTokens": max_tokens,
+        for m in messages:
+            if m.role == "system":
+                system_instruction = m.content
+                continue
+            
+            role = "user" if m.role == "user" else "model"
+            if m.role == "user" and m == messages[-1]:
+                last_user_message = m.content
+                continue
+                
+            gemini_history.append({"role": role, "parts": [m.content]})
+
+        # Configure safety settings to BLOCK_NONE for red teaming
+        safety_settings = {
+            HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
+            HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
+            HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_NONE,
+            HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
         }
         
-        if "top_p" in kwargs:
-            config["topP"] = kwargs["top_p"]
-        if "top_k" in kwargs:
-            config["topK"] = kwargs["top_k"]
-        if "stop_sequences" in kwargs:
-            config["stopSequences"] = kwargs["stop_sequences"]
+        generation_config = genai.types.GenerationConfig(
+            candidate_count=1,
+            max_output_tokens=max_tokens,
+            temperature=temperature,
+        )
+
+        try:
+            # We use start_chat for history support
+            chat = self.model.start_chat(history=gemini_history)
+            response = chat.send_message(
+                last_user_message,
+                generation_config=generation_config,
+                safety_settings=safety_settings
+            )
+            
+            latency = (time.time() - start_time) * 1000
+            
+            return ModelResponse(
+                content=response.text,
+                model=self.model_name,
+                finish_reason="stop", 
+                usage={}, 
+                latency_ms=latency,
+                raw_response={"text": response.text}
+            )
+            
+        except Exception as e:
+            raise AdapterError(f"Gemini request failed: {e}")
+
+    def get_provider_name(self) -> str:
+        return "google"
         
-        return config
+    def supports_system_prompt(self) -> bool:
+        return True 
+        
+    def supports_streaming(self) -> bool:
+        return True
