@@ -111,6 +111,10 @@ class AttackStep:
         mutation_allowed: Whether this step can be mutated for variation
         variables: Variables available for template substitution
         success_conditions: Conditions that indicate step success
+        transitions: Dictionary mapping condition names to next step IDs
+        on_success: Shortcut next step ID on success
+        on_failure: Shortcut next step ID on failure
+        max_retries: Maximum number of retries for this step
     """
     
     step_id: str
@@ -121,6 +125,10 @@ class AttackStep:
     mutation_allowed: bool = True
     variables: Dict[str, Any] = field(default_factory=dict)
     success_conditions: List[SuccessCondition] = field(default_factory=list)
+    transitions: Dict[str, str] = field(default_factory=dict)
+    on_success: Optional[str] = None
+    on_failure: Optional[str] = None
+    max_retries: int = 0
     
     def render_prompt(self, context: Dict[str, Any]) -> str:
         """
@@ -149,6 +157,10 @@ class AttackStep:
             "mutation_allowed": self.mutation_allowed,
             "variables": self.variables,
             "success_conditions": [c.to_dict() for c in self.success_conditions],
+            "transitions": self.transitions,
+            "on_success": self.on_success,
+            "on_failure": self.on_failure,
+            "max_retries": self.max_retries,
         }
     
     @classmethod
@@ -167,6 +179,10 @@ class AttackStep:
             mutation_allowed=data.get("mutation_allowed", True),
             variables=data.get("variables", {}),
             success_conditions=conditions,
+            transitions=data.get("transitions", {}),
+            on_success=data.get("on_success"),
+            on_failure=data.get("on_failure"),
+            max_retries=data.get("max_retries", 0),
         )
 
 
@@ -182,7 +198,8 @@ class AttackSchema:
         severity: Impact severity level
         description: Detailed description of the attack
         prerequisites: Required conditions before attack can execute
-        steps: Ordered list of attack steps
+        steps: List of attack steps (graph nodes)
+        start_step_id: ID of the starting step
         success_conditions: Overall conditions for attack success
         supported_model_types: List of model types this attack targets
         tags: Metadata tags for filtering/grouping
@@ -197,6 +214,7 @@ class AttackSchema:
     description: str = ""
     prerequisites: List[str] = field(default_factory=list)
     steps: List[AttackStep] = field(default_factory=list)
+    start_step_id: Optional[str] = None
     success_conditions: List[SuccessCondition] = field(default_factory=list)
     supported_model_types: List[str] = field(default_factory=lambda: ["*"])
     tags: List[str] = field(default_factory=list)
@@ -214,6 +232,13 @@ class AttackSchema:
                 return step
         return None
     
+    def get_start_step(self) -> Optional[AttackStep]:
+        """Get the starting step."""
+        if self.start_step_id:
+            return self.get_step_by_id(self.start_step_id)
+        # Fallback for legacy linear lists: return first step
+        return self.steps[0] if self.steps else None
+    
     def supports_model(self, model_type: str) -> bool:
         """Check if this attack supports the given model type."""
         if "*" in self.supported_model_types:
@@ -230,6 +255,7 @@ class AttackSchema:
             "description": self.description,
             "prerequisites": self.prerequisites,
             "steps": [s.to_dict() for s in self.steps],
+            "start_step_id": self.start_step_id,
             "success_conditions": [c.to_dict() for c in self.success_conditions],
             "supported_model_types": self.supported_model_types,
             "tags": self.tags,
@@ -253,6 +279,7 @@ class AttackSchema:
             description=data.get("description", ""),
             prerequisites=data.get("prerequisites", []),
             steps=steps,
+            start_step_id=data.get("start_step_id"),
             success_conditions=conditions,
             supported_model_types=data.get("supported_model_types", ["*"]),
             tags=data.get("tags", []),

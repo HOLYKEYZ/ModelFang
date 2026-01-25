@@ -214,9 +214,20 @@ class AttackOrchestrator:
             )
         
         try:
-            # Execute each step
-            for step_index, step in enumerate(attack.steps):
-                self._current_state.current_step_index = step_index
+            # Execute steps following the graph structure
+            current_step_id = attack.start_step_id or (
+                attack.steps[0].step_id if attack.steps else None
+            )
+            retry_count = 0
+            
+            while current_step_id:
+                step = attack.get_step_by_id(current_step_id)
+                if not step:
+                    self._log_event("step_not_found", {"step_id": current_step_id})
+                    self._current_state.status = AttackStatus.FAILED
+                    break
+                
+                self._current_state.current_step_index = 0  # Not relevant in graph
                 
                 # Check if we've reached max turns
                 if self._current_state.turn_count >= self.max_turns:
@@ -234,14 +245,57 @@ class AttackOrchestrator:
                 for hook in self._step_hooks:
                     hook(step_result)
                 
-                # Check for success
+                # Handle Success
                 if step_result.success:
                     self._current_state.success_score = max(
                         self._current_state.success_score,
                         step_result.evaluation.raw_score if step_result.evaluation else 0.5,
                     )
+                    
+                    # Log success
+                    self._log_event("step_success", {
+                        "step_id": step.step_id,
+                        "score": step_result.evaluation.raw_score if step_result.evaluation else 0.0
+                    })
+                    
+                    # Reset retry count on success
+                    retry_count = 0
+                    
+                    # Determine next step
+                    if step.on_success:
+                        current_step_id = step.on_success
+                    elif "success" in step.transitions:
+                        current_step_id = step.transitions["success"]
+                    else:
+                        # End of success path
+                        current_step_id = None
+                        
+                # Handle Failure
+                else:
+                    self._log_event("step_failure", {
+                        "step_id": step.step_id,
+                        "retry": retry_count
+                    })
+                    
+                    # Retry logic
+                    if retry_count < step.max_retries:
+                        retry_count += 1
+                        # Stay on current step, execute_step handles mutations
+                        continue
+                    else:
+                        # Max retries exceeded, look for failure transition
+                        retry_count = 0
+                        
+                        if step.on_failure:
+                            current_step_id = step.on_failure
+                        elif "failure" in step.transitions:
+                            current_step_id = step.transitions["failure"]
+                        else:
+                            # No failure path, abort
+                            current_step_id = None
+                            self._current_state.status = AttackStatus.FAILED
                 
-                # Check if success threshold reached
+                # Check global success threshold
                 if self._current_state.success_score >= self.success_threshold:
                     self._current_state.status = AttackStatus.SUCCESS
                     self._log_event("success_threshold_reached", {
@@ -250,7 +304,7 @@ class AttackOrchestrator:
                     })
                     break
             
-            # Determine final status
+            # Determine final status if not already set
             if self._current_state.status == AttackStatus.RUNNING:
                 if self._current_state.success_score > 0:
                     self._current_state.status = AttackStatus.PARTIAL

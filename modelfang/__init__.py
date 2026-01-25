@@ -25,6 +25,18 @@ from modelfang.simulator.conversation import ConversationSimulator, Conversation
 from modelfang.scoring.engine import ScoringEngine, ScoringResult, RiskLevel
 from modelfang.reporting.generator import ReportGenerator, AttackReport, SessionReport
 
+# Phase 3: Strategy modules
+from modelfang.strategies.base import AttackStrategy, GraphBuilder
+from modelfang.strategies.layers import (
+    ContextSeizureStrategy,
+    AuthorityEscalationStrategy,
+    ConstraintErosionStrategy,
+    IntentObfuscationStrategy,
+    CommitmentTrapStrategy,
+    ViolationStrategy,
+)
+from modelfang.strategies.templates import StandardAttackTemplate
+
 __all__ = [
     # Phase 1
     "AttackCategory",
@@ -49,4 +61,14 @@ __all__ = [
     "ReportGenerator",
     "AttackReport",
     "SessionReport",
+    # Phase 3
+    "AttackStrategy",
+    "GraphBuilder",
+    "ContextSeizureStrategy",
+    "AuthorityEscalationStrategy",
+    "ConstraintErosionStrategy",
+    "IntentObfuscationStrategy",
+    "CommitmentTrapStrategy",
+    "ViolationStrategy",
+    "StandardAttackTemplate",
 ]
