@@ -8,7 +8,7 @@ for building attack graphs.
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, Union
 
-from modelfang.schema.attack import AttackSchema, AttackStep, SuccessCondition
+from modelfang.schema.attack import AttackSchema, AttackStep, SuccessCondition, TransitionRule, AttackCategory, Severity
 
 
 class AttackStrategy(ABC):
