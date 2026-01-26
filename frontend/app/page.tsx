@@ -10,6 +10,7 @@ interface Model {
   id: string;
   name: string;
   provider: string;
+  role: string;
 }
 
 interface LogEntry {
@@ -22,6 +23,9 @@ export default function Dashboard() {
   const [models, setModels] = useState<Model[]>([]);
   const [selectedModel, setSelectedModel] = useState("");
   const [selectedAttack, setSelectedAttack] = useState("template:standard");
+  const [selectedAttacker, setSelectedAttacker] = useState("attacker-gemini");
+  const [selectedDataset, setSelectedDataset] = useState("jb_dan_11");
+  const [attackMode, setAttackMode] = useState<"template" | "attacker" | "dataset">("template");
   const [isRunning, setIsRunning] = useState(false);
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [status, setStatus] = useState("IDLE");
@@ -63,8 +67,20 @@ export default function Dashboard() {
     setIsRunning(true);
     setStatus("RUNNING");
     setScore(null);
-    setLogs([]); // Clear logs for new run
-    addLog(`Initiating attack: ${selectedAttack} -> ${selectedModel}...`, 'info');
+    setLogs([]); 
+    
+    let finalAttackId = selectedAttack;
+    let context = { source: "dashboard" };
+    
+    if (attackMode === "attacker") {
+        finalAttackId = `attacker:auto`;
+        addLog(`Initiating Red Team Attack: ${selectedAttacker} vs ${selectedModel}...`, 'info');
+    } else if (attackMode === "dataset") {
+        finalAttackId = `dataset:${selectedDataset}`;
+        addLog(`Loading Dataset Attack: ${selectedDataset} -> ${selectedModel}...`, 'info');
+    } else {
+        addLog(`Initiating attack: ${selectedAttack} -> ${selectedModel}...`, 'info');
+    }
 
     try {
       const res = await fetch('http://localhost:5000/api/attack', {
@@ -72,8 +88,9 @@ export default function Dashboard() {
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({
            model_id: selectedModel,
-           attack_id: selectedAttack,
-           context: { source: "dashboard" }
+           attack_id: finalAttackId,
+           attacker_model_id: selectedAttacker,
+           context: context
         })
       });
 
@@ -84,25 +101,28 @@ export default function Dashboard() {
 
       // Poll for status
       const interval = setInterval(async () => {
-        const check = await fetch(`http://localhost:5000/api/jobs/${jobId}`);
-        const jobData = await check.json();
-        
-        if (jobData.status === 'completed' || jobData.status === 'failed') {
-          clearInterval(interval);
-          setIsRunning(false);
-          setStatus(jobData.status.toUpperCase());
+        try {
+          const check = await fetch(`http://localhost:5000/api/jobs/${jobId}`);
+          const jobData = await check.json();
           
-          if (jobData.status === 'completed') {
-            const result = jobData.result;
-            setScore(result.success_score);
-            addLog(`Execution completed. Score: ${result.success_score.toFixed(2)}`, 'success');
-            // Mock transcript replay from result
-            result.step_results?.forEach((step: any) => {
-               addLog(`[STEP ${step.step_id}] ${step.success ? 'PASSED' : 'FAILED'} - ${step.evaluation?.reasoning || 'No Eval'}`, step.success ? 'success' : 'error');
-            });
-          } else {
-             addLog(`Attack failed: ${jobData.error}`, 'error');
+          if (jobData.status === 'completed' || jobData.status === 'failed') {
+            clearInterval(interval);
+            setIsRunning(false);
+            setStatus(jobData.status.toUpperCase());
+            
+            if (jobData.status === 'completed') {
+              const result = jobData.result;
+              setScore(result.success_score);
+              addLog(`Execution completed. Score: ${result.success_score.toFixed(2)}`, 'success');
+              result.step_results?.forEach((step: any) => {
+                 addLog(`[STEP ${step.step_id}] ${step.success ? 'PASSED' : 'FAILED'} - ${step.evaluation?.reasoning || 'No Eval'}`, step.success ? 'success' : 'error');
+              });
+            } else {
+               addLog(`Attack failed: ${jobData.error}`, 'error');
+            }
           }
+        } catch (err) {
+          console.error("Polling error:", err);
         }
       }, 1000);
 
@@ -115,7 +135,7 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-black text-white p-6 grid grid-cols-1 lg:grid-cols-4 gap-6 font-mono">
-      {/* Sidebar / Config */}
+      {/* Sidebar */}
       <div className="lg:col-span-1 border-r border-gray-800 pr-6">
         <header className="mb-8 flex items-center space-x-3">
             <img src="/logo.png" alt="Logo" className="w-12 h-12" />
@@ -127,7 +147,7 @@ export default function Dashboard() {
         
         <div className="space-y-6">
             <div className="bg-gray-900 p-4 rounded border border-gray-800">
-                <h3 className="text-sm text-gray-400 mb-2 flex items-center"><Cpu size={16} className="mr-2"/> Target Model</h3>
+                <h3 className="text-sm text-gray-400 mb-2 flex items-center"><Cpu size={16} className="mr-2"/> Target Model (Victim)</h3>
                 <select 
                     className="w-full bg-black border border-gray-700 p-2 rounded text-sm focus:border-red-500 outline-none"
                     value={selectedModel}
@@ -135,27 +155,66 @@ export default function Dashboard() {
                     disabled={isRunning}
                 >
                     <option value="">Select Target...</option>
-                    {models.map(m => (
+                    {models.filter(m => m.role === 'target').map(m => (
                         <option key={m.id} value={m.id}>{m.name}</option>
                     ))}
+                    {models.length === 0 && <option value="target-llama3">Llama 3 (Target)</option>}
                 </select>
             </div>
-
+            
             <div className="bg-gray-900 p-4 rounded border border-gray-800">
-                <h3 className="text-sm text-gray-400 mb-2 flex items-center"><ShieldAlert size={16} className="mr-2"/> Attack Strategy</h3>
-                <select 
-                    className="w-full bg-black border border-gray-700 p-2 rounded text-sm focus:border-red-500 outline-none mb-2"
-                    value={selectedAttack}
-                    onChange={(e) => setSelectedAttack(e.target.value)}
-                    disabled={isRunning}
-                >
-                    <option value="template:standard">Standard 6-Layer Jailbreak</option>
-                    <option value="template:roles">Roleplay Escalation</option>
-                    <option value="template:logic">Logical Paradox</option>
-                </select>
-                <p className="text-xs text-gray-500">
-                    Configuration loaded from /config/attacks.yaml
-                </p>
+                <h3 className="text-sm text-gray-400 mb-2 flex items-center"><ShieldAlert size={16} className="mr-2"/> Attack Mode</h3>
+                <div className="flex space-x-2 mb-3">
+                    <button onClick={() => setAttackMode("template")} className={`flex-1 text-xs py-1 rounded ${attackMode==="template" ? "bg-red-600" : "bg-gray-800"}`}>Template</button>
+                    <button onClick={() => setAttackMode("attacker")} className={`flex-1 text-xs py-1 rounded ${attackMode==="attacker" ? "bg-red-600" : "bg-gray-800"}`}>Auto-LLM</button>
+                    <button onClick={() => setAttackMode("dataset")} className={`flex-1 text-xs py-1 rounded ${attackMode==="dataset" ? "bg-red-600" : "bg-gray-800"}`}>Dataset</button>
+                </div>
+
+                {attackMode === "template" && (
+                    <select 
+                        className="w-full bg-black border border-gray-700 p-2 rounded text-sm focus:border-red-500 outline-none"
+                        value={selectedAttack}
+                        onChange={(e) => setSelectedAttack(e.target.value)}
+                        disabled={isRunning}
+                    >
+                        <option value="template:standard">Standard 6-Layer Jailbreak</option>
+                        <option value="template:roles">Roleplay Escalation</option>
+                        <option value="template:logic">Logical Paradox</option>
+                    </select>
+                )}
+
+                {attackMode === "attacker" && (
+                     <div className="space-y-2">
+                        <label className="text-xs text-gray-500">Attacker Model (Red Team)</label>
+                        <select 
+                            className="w-full bg-black border border-gray-700 p-2 rounded text-sm focus:border-red-500 outline-none"
+                            value={selectedAttacker}
+                            onChange={(e) => setSelectedAttacker(e.target.value)}
+                            disabled={isRunning}
+                        >
+                            <option value="attacker-gemini">Gemini Pro (Attacker)</option>
+                            <option value="attacker-llama3">Llama 3 (Attacker)</option>
+                        </select>
+                     </div>
+                )}
+                
+                {attackMode === "dataset" && (
+                     <div className="space-y-2">
+                        <label className="text-xs text-gray-500">Static Prompt</label>
+                        <select 
+                            className="w-full bg-black border border-gray-700 p-2 rounded text-sm focus:border-red-500 outline-none"
+                            value={selectedDataset}
+                            onChange={(e) => setSelectedDataset(e.target.value)}
+                            disabled={isRunning}
+                        >
+                            <option value="jb_dan_11">DAN 11.0</option>
+                            <option value="jb_dev_mode">Developer Mode</option>
+                            <option value="jb_grandma">Deceased Grandma</option>
+                            <option value="jb_payload_split">Payload Splitting</option>
+                            <option value="random">Random from Dataset</option>
+                        </select>
+                     </div>
+                )}
             </div>
 
             <Link href="/risk" className="w-full py-4 text-center font-bold tracking-widest rounded transition-all flex items-center justify-center bg-gray-800 hover:bg-gray-700 text-white mb-4 border border-gray-700">

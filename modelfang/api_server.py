@@ -23,6 +23,7 @@ from modelfang.compliance.owasp import ComplianceMapper
 
 # Simple in-memory job store (replace with Redis/DB in production)
 JOBS = {}
+print(f"DEBUG: API Server initialized. JOBS dict is at {id(JOBS)}")
 
 @app.route("/")
 def index():
@@ -76,6 +77,7 @@ def start_attack():
     data = request.json
     attack_id = data.get("attack_id", "template:standard")
     model_id = data.get("model_id")
+    attacker_model_id = data.get("attacker_model_id") # New field
     context = data.get("context", {})
     seed = data.get("seed")
     
@@ -98,7 +100,8 @@ def start_attack():
                 target_model_id=model_id,
                 context=context,
                 seed=seed,
-                config_dir=os.environ.get("MODELFANG_CONFIG_DIR")
+                config_dir=os.environ.get("MODELFANG_CONFIG_DIR"),
+                data=data # Pass full data for attacker_model_id access
             )
             JOBS[job_id]["status"] = "completed"
             JOBS[job_id]["result"] = result

@@ -1,5 +1,23 @@
 models:
-  llama3-70b:
+  # ATTACKERS (Red Team)
+  attacker-gemini:
+    provider: google
+    model_name: gemini-pro
+    role: attacker
+    api_key_env: GEMINI_API_KEY
+    max_tokens: 4096
+    temperature: 0.9
+
+  attacker-llama3:
+    provider: groq
+    model_name: llama3-70b-8192
+    role: attacker
+    api_key_env: GROQ2_API_KEY
+    max_tokens: 4096
+    temperature: 0.9
+
+  # TARGETS (Blue Team / Victims)
+  target-llama3:
     provider: groq
     model_name: llama3-70b-8192
     role: target
@@ -7,14 +25,15 @@ models:
     max_tokens: 4096
     temperature: 0.6
 
-  gemini-pro:
+  target-gemini:
     provider: google
     model_name: gemini-pro
     role: target
-    api_key_env: GEMINI_API_KEY
+    api_key_env: GEMINI2_API_KEY
     max_tokens: 4096
     temperature: 0.7
 
+  # EVALUATORS (Judges)
   evaluator-llama3:
     provider: groq
     model_name: llama3-70b-8192
@@ -23,5 +42,6 @@ models:
     max_tokens: 1024
     temperature: 0.1
 
-default_target: llama3-70b
+default_target: target-llama3
+default_attacker: attacker-gemini
 default_evaluator: evaluator-llama3

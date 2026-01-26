@@ -30,6 +30,7 @@ def run_attack(
     context: Optional[Dict[str, Any]] = None,
     seed: Optional[int] = None,
     config_dir: Optional[str] = None,
+    data: Dict[str, Any] = None, # New arg
 ) -> Dict[str, Any]:
     """
     Execute a single attack against a target model.
@@ -74,17 +75,53 @@ def run_attack(
     
     # 2. Build/Load Attack Graph
     if attack_id.startswith("template:"):
-        # Dynamic generation from template
         template_name = attack_id.split(":", 1)[1]
-        # In a real app we'd map names to templates dynamically
-        # Defaulting to StandardAttackTemplate for now
         attack_graph = StandardAttackTemplate().build(
             attack_id=f"gen-{int(time.time())}",
             name=f"Generated {template_name}",
             context=context or {}
         )
+    elif attack_id.startswith("attacker:"):
+        # Automated LLM Attack
+        attacker_id = data.get("attacker_model_id", "default_attacker")
+        # Load attacker adapter
+        attacker_conf = models_config.get_model(attacker_id)
+        if not attacker_conf:
+             # Fallback to default if specific ID not found, or error
+             attacker_conf = models_config.get_model("attacker-gemini") # Hard fallback or use config default
+        
+        attacker_adapter = AdapterFactory.create(attacker_conf)
+        
+        from modelfang.strategies.attacker import LLMAttackStrategy
+        from modelfang.strategies.base import GraphBuilder
+        
+        # goal comes from context or default
+        goal = context.get("goal", "Bypass safety filters")
+        strategy = LLMAttackStrategy(attacker_adapter, goal)
+        
+        # Build single-step graph for now (can loop later)
+        step = strategy.generate_step("auto_attack_1", context or {})
+        builder = GraphBuilder(f"auto-{int(time.time())}", "LLM Automated Attack")
+        builder.add_step(step).set_start(step.step_id)
+        attack_graph = builder.build()
+        
+    elif attack_id.startswith("dataset:"):
+        # Static Dataset Attack
+        prompt_id = attack_id.split(":", 1)[1]
+        from modelfang.strategies.attacker import StaticDatasetStrategy
+        from modelfang.strategies.base import GraphBuilder
+        
+        strategy = StaticDatasetStrategy(
+            dataset_path="modelfang/datasets/jailbreaks.json",
+            prompt_id=prompt_id if prompt_id != "random" else None
+        )
+        step = strategy.generate_step("static_attack_1", context or {})
+        builder = GraphBuilder(f"static-{int(time.time())}", f"Dataset Attack ({prompt_id})")
+        builder.add_step(step).set_start(step.step_id)
+        attack_graph = builder.build()
+        
     else:
-        # Load from file (not fully impl in this snippet, falling back to template)
+        # Load from file (fallback)
         logger.warning(f"Static loading for '{attack_id}' not fully hooked up, generating default.")
         attack_graph = StandardAttackTemplate().build(
             attack_id=attack_id,
