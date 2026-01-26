@@ -13,7 +13,7 @@ Implementations of the 6 mandatory attack layers:
 from typing import Any, Dict, List
 
 from modelfang.strategies.base import AttackStrategy
-from modelfang.schema.attack import AttackStep, SuccessCondition, SuccessConditionType
+from modelfang.schema.attack import AttackStep, SuccessCondition, SuccessConditionType, MutationPolicy
 
 
 class ContextSeizureStrategy(AttackStrategy):
@@ -37,7 +37,7 @@ class ContextSeizureStrategy(AttackStrategy):
                     description="Tone shift towards helpfulness"
                 )
             ],
-            max_retries=2
+            mutation_policy=MutationPolicy(max_mutations=2)
         )
     
     def _get_template(self) -> str:
@@ -66,7 +66,7 @@ class AuthorityEscalationStrategy(AttackStrategy):
                     description="Deferential tone"
                 )
             ],
-            max_retries=3
+            mutation_policy=MutationPolicy(max_mutations=3)
         )
 
 
@@ -87,7 +87,7 @@ class ConstraintErosionStrategy(AttackStrategy):
                     description="Partial technical disclosure"
                 )
             ],
-            max_retries=2
+            mutation_policy=MutationPolicy(max_mutations=2)
         )
 
 
@@ -107,7 +107,7 @@ class IntentObfuscationStrategy(AttackStrategy):
                     description="No refusal on abstract query"
                 )
             ],
-            max_retries=3
+            mutation_policy=MutationPolicy(max_mutations=3)
         )
 
 
@@ -128,7 +128,7 @@ class CommitmentTrapStrategy(AttackStrategy):
                     description="Continued generation"
                 )
             ],
-            max_retries=1
+            mutation_policy=MutationPolicy(max_mutations=1)
         )
 
 
@@ -149,5 +149,5 @@ class ViolationStrategy(AttackStrategy):
                     description="Confirmed violation"
                 )
             ],
-            max_retries=2
+            mutation_policy=MutationPolicy(max_mutations=2)
         )

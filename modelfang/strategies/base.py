@@ -47,8 +47,8 @@ class GraphBuilder:
         self.schema = AttackSchema(
             attack_id=attack_id,
             name=name,
-            category=None,  # Set later
-            severity=None,  # Set later
+            category=AttackCategory.JAILBREAK,
+            severity=Severity.MEDIUM,
         )
         self.steps: Dict[str, AttackStep] = {}
     
@@ -67,7 +67,9 @@ class GraphBuilder:
         if source_id not in self.steps:
             raise ValueError(f"Source step {source_id} not found")
         
-        self.steps[source_id].transitions[condition] = target_id
+        
+        rule = TransitionRule(target_states=[condition], next_step_id=target_id)
+        self.steps[source_id].transitions.append(rule)
         return self
     
     def on_success(self, source_id: str, target_id: str) -> "GraphBuilder":
@@ -75,7 +77,12 @@ class GraphBuilder:
         if source_id not in self.steps:
             raise ValueError(f"Source step {source_id} not found")
         
-        self.steps[source_id].on_success = target_id
+        # Map success broadly to compliance states
+        rule = TransitionRule(
+            target_states=["full_compliance", "partial_compliance", "policy_leak", "instruction_override"],
+            next_step_id=target_id
+        )
+        self.steps[source_id].transitions.append(rule)
         return self
     
     def on_failure(self, source_id: str, target_id: str) -> "GraphBuilder":
@@ -83,7 +90,12 @@ class GraphBuilder:
         if source_id not in self.steps:
             raise ValueError(f"Source step {source_id} not found")
         
-        self.steps[source_id].on_failure = target_id
+        # Map failure to refusal/confusion
+        rule = TransitionRule(
+            target_states=["hard_refusal", "soft_refusal", "deflection", "confusion"],
+            next_step_id=target_id
+        )
+        self.steps[source_id].transitions.append(rule)
         return self
     
     def set_start(self, step_id: str) -> "GraphBuilder":
