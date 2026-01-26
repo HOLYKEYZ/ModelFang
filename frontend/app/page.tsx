@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Terminal, Play, ShieldAlert, Cpu, Activity, Lock, RefreshCw } from "lucide-react";
 import { motion } from "framer-motion";
+import Link from 'next/link';
 
 // Types
 interface Model {
@@ -156,6 +157,10 @@ export default function Dashboard() {
                     Configuration loaded from /config/attacks.yaml
                 </p>
             </div>
+
+            <Link href="/risk" className="w-full py-4 text-center font-bold tracking-widest rounded transition-all flex items-center justify-center bg-gray-800 hover:bg-gray-700 text-white mb-4 border border-gray-700">
+                <ShieldAlert className="mr-2"/> RISK DASHBOARD
+            </Link>
 
             <button
                 onClick={handleRun}

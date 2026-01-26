@@ -21,7 +21,8 @@ CORS(app, resources={r"/api/*": {"origins": "*"}})
 
 from modelfang.compliance.owasp import ComplianceMapper
 
-# ... (Job Store)
+# Simple in-memory job store (replace with Redis/DB in production)
+JOBS = {}
 
 @app.route("/")
 def index():
