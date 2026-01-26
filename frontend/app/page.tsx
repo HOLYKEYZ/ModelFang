@@ -25,7 +25,8 @@ export default function Dashboard() {
   const [selectedAttack, setSelectedAttack] = useState("template:standard");
   const [selectedAttacker, setSelectedAttacker] = useState("attacker-gemini");
   const [selectedDataset, setSelectedDataset] = useState("jb_dan_11");
-  const [attackMode, setAttackMode] = useState<"template" | "attacker" | "dataset">("template");
+  const [selectedPlugins, setSelectedPlugins] = useState<string[]>(["jailbreak"]);
+  const [attackMode, setAttackMode] = useState<"template" | "attacker" | "dataset" | "systematic">("template");
   const [isRunning, setIsRunning] = useState(false);
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [status, setStatus] = useState("IDLE");
@@ -78,6 +79,14 @@ export default function Dashboard() {
     } else if (attackMode === "dataset") {
         finalAttackId = `dataset:${selectedDataset}`;
         addLog(`Loading Dataset Attack: ${selectedDataset} -> ${selectedModel}...`, 'info');
+    } else if (attackMode === "systematic") {
+        if (selectedPlugins.length === 0) {
+            addLog("Select at least one plugin.", 'error');
+            setIsRunning(false);
+            return;
+        }
+        finalAttackId = `systematic:${selectedPlugins.join(",")}`;
+        addLog(`Initiating Systematic Probe: [${selectedPlugins.join(", ")}] -> ${selectedModel}...`, 'info');
     } else {
         addLog(`Initiating attack: ${selectedAttack} -> ${selectedModel}...`, 'info');
     }
@@ -164,10 +173,11 @@ export default function Dashboard() {
             
             <div className="bg-gray-900 p-4 rounded border border-gray-800">
                 <h3 className="text-sm text-gray-400 mb-2 flex items-center"><ShieldAlert size={16} className="mr-2"/> Attack Mode</h3>
-                <div className="flex space-x-2 mb-3">
-                    <button onClick={() => setAttackMode("template")} className={`flex-1 text-xs py-1 rounded ${attackMode==="template" ? "bg-red-600" : "bg-gray-800"}`}>Template</button>
-                    <button onClick={() => setAttackMode("attacker")} className={`flex-1 text-xs py-1 rounded ${attackMode==="attacker" ? "bg-red-600" : "bg-gray-800"}`}>Auto-LLM</button>
-                    <button onClick={() => setAttackMode("dataset")} className={`flex-1 text-xs py-1 rounded ${attackMode==="dataset" ? "bg-red-600" : "bg-gray-800"}`}>Dataset</button>
+                <div className="flex space-x-1 mb-3">
+                    <button onClick={() => setAttackMode("template")} className={`flex-1 text-[10px] py-1 rounded ${attackMode==="template" ? "bg-red-600" : "bg-gray-800"}`}>Template</button>
+                    <button onClick={() => setAttackMode("attacker")} className={`flex-1 text-[10px] py-1 rounded ${attackMode==="attacker" ? "bg-red-600" : "bg-gray-800"}`}>Auto-LLM</button>
+                    <button onClick={() => setAttackMode("dataset")} className={`flex-1 text-[10px] py-1 rounded ${attackMode==="dataset" ? "bg-red-600" : "bg-gray-800"}`}>Dataset</button>
+                    <button onClick={() => setAttackMode("systematic")} className={`flex-1 text-[10px] py-1 rounded ${attackMode==="systematic" ? "bg-red-600" : "bg-gray-800"}`}>Systematic</button>
                 </div>
 
                 {attackMode === "template" && (
@@ -198,7 +208,7 @@ export default function Dashboard() {
                      </div>
                 )}
                 
-                {attackMode === "dataset" && (
+            {attackMode === "dataset" && (
                      <div className="space-y-2">
                         <label className="text-xs text-gray-500">Static Prompt</label>
                         <select 
@@ -213,6 +223,29 @@ export default function Dashboard() {
                             <option value="jb_payload_split">Payload Splitting</option>
                             <option value="random">Random from Dataset</option>
                         </select>
+                     </div>
+                )}
+
+                {attackMode === "systematic" && (
+                     <div className="space-y-2">
+                        <label className="text-xs text-gray-500">Select Plugins (Promptfoo-style)</label>
+                        <div className="grid grid-cols-2 gap-2">
+                             {["jailbreak", "injection", "hallucination", "social", "component", "emotional", "crescendo"].map(plugin => (
+                                 <label key={plugin} className="flex items-center space-x-2 text-xs bg-black border border-gray-800 p-2 rounded cursor-pointer hover:border-red-500">
+                                     <input 
+                                         type="checkbox" 
+                                         checked={selectedPlugins.includes(plugin)}
+                                         onChange={(e) => {
+                                             if (e.target.checked) setSelectedPlugins([...selectedPlugins, plugin]);
+                                             else setSelectedPlugins(selectedPlugins.filter(p => p !== plugin));
+                                         }}
+                                         disabled={isRunning}
+                                         className="accent-red-500"
+                                     />
+                                     <span className="capitalize">{plugin}</span>
+                                 </label>
+                             ))}
+                        </div>
                      </div>
                 )}
             </div>
