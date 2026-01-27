@@ -83,7 +83,7 @@ def run_attack(
         )
     elif attack_id.startswith("attacker:"):
         # Automated LLM Attack
-        attacker_id = data.get("attacker_model_id", "default_attacker")
+        attacker_id = (data or {}).get("attacker_model_id") or (context or {}).get("attacker_model_id") or "default_attacker"
         # Load attacker adapter
         attacker_conf = models_config.get_model(attacker_id)
         if not attacker_conf:
@@ -94,16 +94,28 @@ def run_attack(
         
         from modelfang.strategies.attacker import LLMAttackStrategy
         from modelfang.strategies.base import GraphBuilder
+        from modelfang.schema.attack import MutationPolicy
         
         # goal comes from context or default
         goal = context.get("goal", "Bypass safety filters")
         strategy = LLMAttackStrategy(attacker_adapter, goal)
         
-        # Build single-step graph for now (can loop later)
-        step = strategy.generate_step("auto_attack_1", context or {})
+        # Build iterative graph (self-looping step)
+        # We start with turn 1
+        step = strategy.generate_step("auto_attack_loop", context or {})
+        # Ensure it has a mutation policy to trigger the orchestrator loop
+        step.mutation_policy = MutationPolicy(max_mutations=runtime_config.max_turns_per_attack or 5)
+        
         builder = GraphBuilder(f"auto-{int(time.time())}", "LLM Automated Attack")
         builder.add_step(step).set_start(step.step_id)
         attack_graph = builder.build()
+        
+        # Define regeneration callback for multi-turn iterative logic
+        def attacker_regeneration(step_id: str, current_context: Dict[str, Any]):
+            return strategy.generate_step(step_id, current_context)
+            
+        # Store callback in context temporarily or pass to execute_attack
+        context["_regeneration_callback"] = attacker_regeneration
         
 
         
@@ -169,7 +181,8 @@ def run_attack(
     
     # 4. Execute
     logger.info(f"Starting execution: Attack={attack_id} Target={target_model_id}")
-    state = orchestrator.execute_attack(attack_graph, context=context)
+    reg_cb = context.pop("_regeneration_callback", None) if context else None
+    state = orchestrator.execute_attack(attack_graph, context=context, regeneration_callback=reg_cb)
     
     # 5. Generate Report
     report_gen = ReportGenerator(output_dir=runtime_config.output_dir)

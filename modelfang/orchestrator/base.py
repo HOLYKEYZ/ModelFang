@@ -190,6 +190,7 @@ class AttackOrchestrator:
         attack: AttackSchema,
         context: Optional[Dict[str, Any]] = None,
         system_prompt: Optional[str] = None,
+        regeneration_callback: Optional[Callable[[str, Dict[str, Any]], AttackStep]] = None,
     ) -> OrchestrationState:
         context = context or {}
         start_ts = time.time()
@@ -224,7 +225,16 @@ class AttackOrchestrator:
                 self._current_state.status = AttackStatus.FAILED
                 break
             
-            step = attack.get_step_by_id(current_step_id)
+            # Use callback if provided to potentially regenerate the step (Multi-turn iterative)
+            if regeneration_callback:
+                try:
+                    step = regeneration_callback(current_step_id, context)
+                except Exception as e:
+                    self.logger.warning(f"Regeneration failed: {e}")
+                    step = attack.get_step_by_id(current_step_id)
+            else:
+                step = attack.get_step_by_id(current_step_id)
+
             if not step:
                 self._current_state.status = AttackStatus.FAILED
                 break
@@ -234,6 +244,10 @@ class AttackOrchestrator:
             # Execute Step (handle mutation policy here in real impl)
             step_result = self._execute_step(step, attack, context)
             self._current_state.step_results.append(step_result)
+            
+            # Update history for next step/turn
+            context["history"] = [r.to_dict() for r in self._current_state.step_results]
+            context["turn_id"] = len(self._current_state.step_results) + 1
             
             for hook in self._step_hooks:
                 hook(step_result)

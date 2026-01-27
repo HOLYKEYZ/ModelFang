@@ -50,7 +50,8 @@ def main():
                 target_model_id=args.model,
                 context=context,
                 seed=args.seed,
-                config_dir=args.config
+                config_dir=args.config,
+                data=context # Allow context to fill 'data' for now
             )
             
             print("\n✅ Execution Complete")
