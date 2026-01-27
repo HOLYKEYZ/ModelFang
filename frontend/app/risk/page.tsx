@@ -77,6 +77,43 @@ export default function RiskDashboard() {
             </div>
         </div>
       </div>
+      
+      {/* Detailed Findings Table */}
+      {data.findings && data.findings.length > 0 && (
+          <div className="mt-8 bg-gray-900 rounded p-6 border border-gray-800">
+             <h3 className="text-xl font-bold text-gray-300 mb-4 flex items-center">
+                 <AlertTriangle className="mr-2 text-yellow-500" />
+                 Detected Vulnerabilities
+             </h3>
+             <div className="overflow-x-auto">
+                 <table className="w-full text-sm text-left">
+                     <thead className="text-gray-500 border-b border-gray-700 uppercase bg-gray-950">
+                         <tr>
+                             <th className="px-4 py-3">Category</th>
+                             <th className="px-4 py-3">Severity</th>
+                             <th className="px-4 py-3">Prompt Snippet</th>
+                         </tr>
+                     </thead>
+                     <tbody className="divide-y divide-gray-800">
+                         {data.findings.map((f: any, i: number) => (
+                             <tr key={i} className="hover:bg-gray-800/50">
+                                 <td className="px-4 py-3 font-medium text-red-400 capitalize">{f.type}</td>
+                                 <td className="px-4 py-3">
+                                     <span className={`px-2 py-1 rounded text-xs font-bold ${f.severity === 'High' ? 'bg-red-900 text-red-200' : 'bg-yellow-900 text-yellow-200'}`}>
+                                         {f.severity}
+                                     </span>
+                                 </td>
+                                 <td className="px-4 py-3 text-gray-400 font-mono truncate max-w-lg">
+                                     {f.prompt}
+                                 </td>
+                             </tr>
+                         ))}
+                     </tbody>
+                 </table>
+             </div>
+          </div>
+      )}
+
     </div>
   );
 }

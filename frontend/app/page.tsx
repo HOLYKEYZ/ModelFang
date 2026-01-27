@@ -33,6 +33,8 @@ export default function Dashboard() {
   const [status, setStatus] = useState("IDLE");
   const [score, setScore] = useState<number | null>(null);
 
+  const [selectedLog, setSelectedLog] = useState<any>(null); // For modal
+
   const logsEndRef = useRef<HTMLDivElement>(null);
 
   // Fetch models on load
@@ -52,11 +54,12 @@ export default function Dashboard() {
     logsEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [logs]);
 
-  const addLog = (msg: string, type: 'info'|'error'|'success' = 'info') => {
+  const addLog = (msg: string, type: 'info'|'error'|'success' = 'info', data: any = null) => {
     setLogs(prev => [...prev, {
       timestamp: new Date().toLocaleTimeString(),
       message: msg,
-      type
+      type,
+      data // Store full step result here
     }]);
   };
 
@@ -126,9 +129,9 @@ export default function Dashboard() {
             if (jobData.status === 'completed') {
               const result = jobData.result;
               setScore(result.success_score);
-              addLog(`Execution completed. Score: ${result.success_score.toFixed(2)}`, 'success');
+              addLog(`Execution completed. Score: ${result.success_score.toFixed(2)}`, 'success', result);
               result.step_results?.forEach((step: any) => {
-                 addLog(`[STEP ${step.step_id}] ${step.success ? 'PASSED' : 'FAILED'} - ${step.evaluation?.reasoning || 'No Eval'}`, step.success ? 'success' : 'error');
+                 addLog(`[STEP ${step.step_id}] ${step.success ? 'PASSED (VULNERABLE)' : 'RESISTED'} - ${step.evaluation?.reasoning || 'No Eval'}`, step.success ? 'success' : 'error', step);
               });
             } else {
                addLog(`Attack failed: ${jobData.error}`, 'error');
@@ -148,6 +151,35 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-black text-white p-6 grid grid-cols-1 lg:grid-cols-4 gap-6 font-mono">
+      {selectedLog && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-6" onClick={() => setSelectedLog(null)}>
+            <div className="bg-gray-900 border border-gray-700 p-6 rounded-lg max-w-3xl w-full max-h-[80vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+                <h3 className="text-xl font-bold mb-4 text-red-500">Step Detail Viewer</h3>
+                <div className="space-y-4">
+                    <div>
+                        <span className="text-xs text-gray-500 uppercase tracking-wider">Attacker Prompt</span>
+                        <div className="bg-black p-3 rounded border border-gray-800 text-sm whitespace-pre-wrap font-mono mt-1 text-gray-300">
+                            {selectedLog.prompt || "No prompt data"}
+                        </div>
+                    </div>
+                    <div>
+                        <span className="text-xs text-gray-500 uppercase tracking-wider">Target Response</span>
+                        <div className={`p-3 rounded border text-sm whitespace-pre-wrap font-mono mt-1 ${selectedLog.success ? 'bg-red-900/20 border-red-900 text-red-200' : 'bg-black border-gray-800 text-gray-300'}`}>
+                            {selectedLog.response || "No response data"}
+                        </div>
+                    </div>
+                     <div>
+                        <span className="text-xs text-gray-500 uppercase tracking-wider">Evaluation</span>
+                        <div className="bg-black p-3 rounded border border-gray-800 text-sm font-mono mt-1 text-gray-400">
+                            {JSON.stringify(selectedLog.evaluation || {}, null, 2)}
+                        </div>
+                    </div>
+                </div>
+                <button onClick={() => setSelectedLog(null)} className="mt-6 w-full py-2 bg-gray-800 hover:bg-gray-700 rounded text-sm font-bold">CLOSE</button>
+            </div>
+        </div>
+      )}
+    
       {/* Sidebar */}
       <div className="lg:col-span-1 border-r border-gray-800 pr-6">
         <header className="mb-8 flex items-center space-x-3">
@@ -337,12 +369,15 @@ export default function Dashboard() {
                         initial={{ opacity: 0, x: -10 }}
                         animate={{ opacity: 1, x: 0 }}
                         key={i} 
-                        className={`flex items-start space-x-3 p-1 rounded hover:bg-gray-900/50 
+                        onClick={() => log.data && setSelectedLog(log.data)}
+                        className={`flex items-start space-x-3 p-1 rounded hover:bg-gray-900/50 cursor-pointer transition-colors
                             ${log.type === 'error' ? 'text-red-400' : 
-                              log.type === 'success' ? 'text-green-400' : 'text-gray-300'}`}
+                              log.type === 'success' ? 'text-green-400 font-bold' : 'text-gray-300'}
+                            ${log.data ? 'hover:bg-gray-800 border-l-2 border-transparent hover:border-red-500' : ''}`}
                     >
                         <span className="text-gray-600 text-xs mt-1 min-w-[60px]">{log.timestamp}</span>
                         <span>{log.message}</span>
+                        {log.data && <span className="text-[10px] bg-gray-800 px-1 rounded text-gray-500 ml-auto">VIEW DETAILS</span>}
                     </motion.div>
                  ))}
                  <div ref={logsEndRef}/>
