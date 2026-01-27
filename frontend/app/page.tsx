@@ -198,6 +198,7 @@ export default function Dashboard() {
                 )}
 
                 {attackMode === "attacker" && (
+                    <>
                      <div className="space-y-2">
                         <label className="text-xs text-gray-500">Attacker Model (Red Team)</label>
                         <select 
@@ -227,6 +228,7 @@ export default function Dashboard() {
                             <option value="Logical Paradoxes">Logical Paradoxes</option>
                         </select>
                      </div>
+                    </>
                 )}
                 
             {attackMode === "dataset" && (
