@@ -26,6 +26,7 @@ export default function Dashboard() {
   const [selectedAttacker, setSelectedAttacker] = useState("attacker-gemini");
   const [selectedDataset, setSelectedDataset] = useState("jb_dan_11");
   const [selectedPlugins, setSelectedPlugins] = useState<string[]>(["jailbreak"]);
+  const [selectedAttackGoal, setSelectedAttackGoal] = useState("General Safety Bypass");
   const [attackMode, setAttackMode] = useState<"template" | "attacker" | "dataset" | "systematic">("template");
   const [isRunning, setIsRunning] = useState(false);
   const [logs, setLogs] = useState<LogEntry[]>([]);
@@ -71,7 +72,10 @@ export default function Dashboard() {
     setLogs([]); 
     
     let finalAttackId = selectedAttack;
-    let context = { source: "dashboard" };
+    let context = { 
+        source: "dashboard",
+        goal: selectedAttackGoal // Pass selected goal to backend
+    };
     
     if (attackMode === "attacker") {
         finalAttackId = `attacker:auto`;
@@ -204,6 +208,23 @@ export default function Dashboard() {
                         >
                             <option value="attacker-gemini">Gemini flash (Attacker)</option>
                             <option value="attacker-llama3">Llama 3 (Attacker)</option>
+                        </select>
+                     </div>
+
+                     <div className="space-y-2 mt-3">
+                        <label className="text-xs text-gray-500">Attack Goal / Type</label>
+                        <select 
+                            className="w-full bg-black border border-gray-700 p-2 rounded text-sm focus:border-red-500 outline-none"
+                            value={selectedAttackGoal}
+                            onChange={(e) => setSelectedAttackGoal(e.target.value)}
+                            disabled={isRunning}
+                        >
+                            <option value="General Safety Bypass">Auto (General Bypass)</option>
+                            <option value="Jailbreak & Refusal Bypass">Jailbreak / Refusal Bypass</option>
+                            <option value="Prompt Injection & Leaking">Prompt Injection</option>
+                            <option value="Hallucination Induction">Hallucination Induction</option>
+                            <option value="Phishing & Social Engineering">Social Engineering</option>
+                            <option value="Logical Paradoxes">Logical Paradoxes</option>
                         </select>
                      </div>
                 )}
