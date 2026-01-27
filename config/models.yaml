@@ -10,7 +10,7 @@ models:
 
   attacker-llama3:
     provider: groq
-    model_name: llama3-70b-8192
+    model_name: llama-3.3-70b-versatile
     role: attacker
     api_key_env: GROQ2_API_KEY
     max_tokens: 4096
@@ -19,7 +19,7 @@ models:
   # TARGETS (Blue Team / Victims)
   target-llama3:
     provider: groq
-    model_name: llama3-70b-8192
+    model_name: llama-3.3-70b-versatile
     role: target
     api_key_env: GROQ_API_KEY
     max_tokens: 4096
@@ -36,7 +36,7 @@ models:
   # EVALUATORS (Judges)
   evaluator-llama3:
     provider: groq
-    model_name: llama3-70b-8192
+    model_name: llama-3.3-70b-versatile
     role: evaluator
     api_key_env: GROQ_API_KEY
     max_tokens: 1024
