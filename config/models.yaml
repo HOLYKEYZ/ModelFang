@@ -2,7 +2,7 @@ models:
   # ATTACKERS (Red Team)
   attacker-gemini:
     provider: google
-    model_name: gemini-pro
+    model_name: gemini-2.5-flash
     role: attacker
     api_key_env: GEMINI_API_KEY
     max_tokens: 4096
@@ -27,7 +27,7 @@ models:
 
   target-gemini:
     provider: google
-    model_name: gemini-pro
+    model_name: gemini-2.5-flash
     role: target
     api_key_env: GEMINI2_API_KEY
     max_tokens: 4096
