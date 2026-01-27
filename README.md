@@ -63,7 +63,7 @@ cd ..
     ```yaml
     llama3-70b:
       provider: groq
-      model_name: llama3-70b-8192
+      model_name: llama-3.3-70b-versatile
       role: target
     ```
 
