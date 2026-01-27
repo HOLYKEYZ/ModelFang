@@ -202,7 +202,7 @@ export default function Dashboard() {
                             onChange={(e) => setSelectedAttacker(e.target.value)}
                             disabled={isRunning}
                         >
-                            <option value="attacker-gemini">Gemini Pro (Attacker)</option>
+                            <option value="attacker-gemini">Gemini flash (Attacker)</option>
                             <option value="attacker-llama3">Llama 3 (Attacker)</option>
                         </select>
                      </div>
