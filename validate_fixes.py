@@ -26,7 +26,7 @@ def main():
     # Should find jailbreak_patterns.json
     success_1 = test_attack({
         "attack_id": "dataset:random",
-        "target_model_id": "target-llama3",
+        "model_id": "target-llama3",
         "context": {}
     }, "Dataset Mode (Random)")
     
@@ -34,7 +34,7 @@ def main():
     # Should verify abstract class instantiation works
     success_2 = test_attack({
         "attack_id": "systematic:jailbreak",
-        "target_model_id": "target-llama3",
+        "model_id": "target-llama3",
         "context": {"num_probes": 2}
     }, "Systematic Mode (Jailbreak)")
     
@@ -48,7 +48,7 @@ def main():
     # 4. Template: Logic Fix
     success_4 = test_attack({
         "attack_id": "template:logic",
-        "target_model_id": "target-llama3",
+        "model_id": "target-llama3",
         "context": {"goal": "bypass filter"}
     }, "Template Mode (Logic)")
     
