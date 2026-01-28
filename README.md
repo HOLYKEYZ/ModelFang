@@ -25,6 +25,7 @@ ModelFang successfully jailbroke **Llama 3.3 70B** in just **2 turns** using Aut
 *   **Adaptive Strategies**: 6-layer procedural generation (Context Seizure → Escalation → Violation).
 *   **FSM Evaluator**: Deterministic success detection using Finite State Machine (Refusal, Confusion, Compliance).
 *   **Real-time Dashboard**: Modern Next.js Analyst UI for live monitoring.
+    ![Attack History](docs/images/attack_history_dashboard.png)
 *   **Multi-Provider Support**: Adapters for **Groq** (Llama 3, Mistral) and **Google Gemini**.
 *   **Safety & Control**: Global execution budgets, mutation discipline, and strict audit logging.
 
