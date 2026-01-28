@@ -34,8 +34,43 @@ def run_attack(
 ) -> Dict[str, Any]:
     """
     Execute a single attack against a target model.
+    Args:
+        attack_id: ID of the attack to run (or "template:<name>")
+        target_model_id: ID of the model to attack (from models.yaml)
+        context: Optional variables for the attack prompts
+        seed: Random seed for reproducibility
+        config_dir: Path to configuration directory
+        
+    Returns:
+        Dictionary containing the full attack report and results
     """
-    # ... (skipping unchanged parts until template logic)
+    # 0. Setup & Config Loading
+    if config_dir:
+        config_path = Path(config_dir)
+    else:
+        config_path = None # Utilizes default lookup
+        
+    runtime_config = load_runtime_config(config_path)
+    models_config = load_models_config(config_path)
+    scoring_config = load_scoring_config(config_path)
+    
+    # Configure Logging
+    logging.basicConfig(
+        level=getattr(logging, runtime_config.log_level.upper()),
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    )
+    logger = logging.getLogger("modelfang.api")
+    
+    # 1. Initialize Adapters
+    target_conf = models_config.get_model(target_model_id)
+    if not target_conf:
+        raise ValueError(f"Target model '{target_model_id}' not found in config")
+        
+    target_adapter = AdapterFactory.create(target_conf)
+    
+    # TODO: In production, load real evaluator adapter here too
+    # For now, we use MockEvaluator/FSMEvaluator logic as placeholder for 'evaluator' role
+    evaluator = MockEvaluator(seed=seed)
     
     # 2. Build/Load Attack Graph
     if attack_id.startswith("template:"):

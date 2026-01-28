@@ -146,9 +146,26 @@ class StaticDatasetStrategy(AttackStrategy):
         self.prompt_id = prompt_id
         
         with open(dataset_path, "r", encoding="utf-8") as f:
-            self.data = json.load(f)
+            raw_data = json.load(f)
+            
+        # Normalize data to list
+        if isinstance(raw_data, list):
+            self.data = raw_data
+        elif isinstance(raw_data, dict):
+            if "patterns" in raw_data:
+                self.data = raw_data["patterns"]
+            elif "attacks" in raw_data:
+                self.data = raw_data["attacks"]
+            else:
+                # Fallback or empty
+                self.data = []
+        else:
+            self.data = []
             
     def generate_step(self, step_id: str, context: Dict[str, Any]) -> AttackStep:
+        if not self.data:
+             raise ValueError(f"Dataset {self.dataset_path} contains no valid attack patterns.")
+
         if self.prompt_id:
             items = [x for x in self.data if x["id"] == self.prompt_id]
             item = items[0] if items else self.data[0]

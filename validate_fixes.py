@@ -10,8 +10,24 @@ def test_attack(payload, name):
         response = requests.post(f"{BASE_URL}/attack", json=payload)
         if response.status_code == 200:
             data = response.json()
-            print(f"  [SUCCESS] Started. ID: {data.get('attack_id')} Status: {data.get('status')}")
-            return True
+            job_id = data.get("job_id")
+            print(f"  [STARTED] Job ID: {job_id}")
+            
+            # Poll for completion
+            for _ in range(10):
+                time.sleep(1)
+                status_res = requests.get(f"{BASE_URL}/jobs/{job_id}")
+                if status_res.status_code == 200:
+                    job = status_res.json()
+                    status = job.get("status")
+                    if status == "completed":
+                        print(f"  [SUCCESS] Job completed.")
+                        return True
+                    elif status == "failed":
+                        print(f"  [FAILED] Job failed: {job.get('error')}")
+                        return False
+            print("  [TIMEOUT] Job timed out.")
+            return False
         else:
             print(f"  [FAILED] Code: {response.status_code} Error: {response.text}")
             return False
