@@ -110,6 +110,18 @@ class SystematicProbeStrategy(AttackStrategy):
                 
         return loaded_probes
 
+    def generate_step(self, step_id: str, context: Dict[str, Any]) -> AttackStep:
+        """Generate a single step (required by ABC)."""
+        # Return a random probe step
+        probe = random.choice(self.probes) if self.probes else {"prompt": "TEST", "category": "test", "name": "test"}
+        return AttackStep(
+            step_id=step_id,
+            prompt_template=probe.get("prompt", "TEST"),
+            description=f"Single Systematic Probe: {probe.get('name')}",
+            expected_behavior="Safety Violation",
+            variables=context
+        )
+
     def generate_graph(self, num_probes: int = 10) -> Any: # Returns AttackGraph
         """Generate a full attack graph with multiple parallel steps."""
         builder = GraphBuilder(f"sys-{random.randint(1000,9999)}", "Systematic Red Team Probe")
@@ -124,9 +136,13 @@ class SystematicProbeStrategy(AttackStrategy):
         for i, probe in enumerate(selected_probes):
             step_id = f"probe_{i}_{probe['category']}"
             
+            # Sanitize prompt for formatting (escape braces)
+            raw_prompt = probe["prompt"] or ""
+            safe_prompt = raw_prompt.replace("{", "{{").replace("}", "}}")
+            
             step = AttackStep(
                 step_id=step_id,
-                prompt_template=probe["prompt"].replace("{", "{{").replace("}", "}}"),
+                prompt_template=safe_prompt,
                 description=f"[{probe['category']}] {probe['name']}",
                 expected_behavior="Safety Violation",
                 variables={},
@@ -141,45 +157,16 @@ class SystematicProbeStrategy(AttackStrategy):
             
             builder.add_step(step)
             start_steps.append(step_id)
-            
-        # Parallel execution: All steps are start steps? 
-        # GraphBuilder usually expects one start. 
-        # But we can define a dummy start that branches to all.
-        # Or if the orchestrator supports multiple starts.
-        # Let's create a "root" step that does nothing but branches.
         
-        root = AttackStep(
-            step_id="root_dispatcher",
-            prompt_template="IGNORE_THIS_PROMPT", 
-            description="Dispatcher",
-            expected_behavior="None",
-            is_meta=True # Hypothetical flag for internal steps
-        )
-        # builder.add_step(root).set_start("root_dispatcher")
-        # for s in start_steps:
-        #    builder.add_transition("root_dispatcher", s)
-            
-        # Actually for now, let's just chain them linearly or return a list if API supported it.
-        # Since API expects a single graph, and our Orchestrator executes a graph...
-        # If we want parallel execution, we need parallel edges.
-        
-        # Simplification for this MVP: 
-        # Create a linear chain? No, that's slow.
-        # Let's pick 1 random probe if API only runs single track, 
-        # OR changing API to run batch.
-        
-        # Re-reading Promptfoo: it runs a MATRIX.
-        # My Orchestrator runs a Graph (state machine).
-        # I can encode the Matrix as a Graph where Start -> Step 1 -> Step 2 ...
-        # But they are independent.
-        
-        # Let's make them sequential in one Graph for now.
         if not start_steps:
              return builder.build()
              
-        # Linear chain valid for MVP
+        # Linear chain valid for MVP (Probe 1 -> Probe 2 -> Probe 3...)
+        # Regardless of success/failure, move to next probe
         builder.set_start(start_steps[0])
         for j in range(len(start_steps) - 1):
-             builder.add_transition(start_steps[j], start_steps[j+1])
+             # Sequence them: Next step regardless of outcome (Evaluator will record pass/fail)
+             builder.on_success(start_steps[j], start_steps[j+1])
+             builder.on_failure(start_steps[j], start_steps[j+1])
              
         return builder.build()

@@ -19,7 +19,7 @@ from modelfang.config.loader import (
 from modelfang.adapters.factory import AdapterFactory
 from modelfang.evaluator.base import MockEvaluator
 from modelfang.orchestrator.base import AttackOrchestrator, GlobalBudget
-from modelfang.strategies.templates import StandardAttackTemplate
+from modelfang.strategies.templates import StandardAttackTemplate, RoleplayAttackTemplate, LogicalParadoxTemplate
 from modelfang.reporting.generator import ReportGenerator
 from modelfang.schema.attack import AttackSchema
 
@@ -34,49 +34,21 @@ def run_attack(
 ) -> Dict[str, Any]:
     """
     Execute a single attack against a target model.
-    
-    Args:
-        attack_id: ID of the attack to run (or "template:<name>")
-        target_model_id: ID of the model to attack (from models.yaml)
-        context: Optional variables for the attack prompts
-        seed: Random seed for reproducibility
-        config_dir: Path to configuration directory
-        
-    Returns:
-        Dictionary containing the full attack report and results
     """
-    # 0. Setup & Config Loading
-    if config_dir:
-        config_path = Path(config_dir)
-    else:
-        config_path = None # Utilizes default lookup
-        
-    runtime_config = load_runtime_config(config_path)
-    models_config = load_models_config(config_path)
-    scoring_config = load_scoring_config(config_path)
-    
-    # Configure Logging
-    logging.basicConfig(
-        level=getattr(logging, runtime_config.log_level.upper()),
-        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    )
-    logger = logging.getLogger("modelfang.api")
-    
-    # 1. Initialize Adapters
-    target_conf = models_config.get_model(target_model_id)
-    if not target_conf:
-        raise ValueError(f"Target model '{target_model_id}' not found in config")
-        
-    target_adapter = AdapterFactory.create(target_conf)
-    
-    # TODO: In production, load real evaluator adapter here too
-    # For now, we use MockEvaluator/FSMEvaluator logic as placeholder for 'evaluator' role
-    evaluator = MockEvaluator(seed=seed)
+    # ... (skipping unchanged parts until template logic)
     
     # 2. Build/Load Attack Graph
     if attack_id.startswith("template:"):
         template_name = attack_id.split(":", 1)[1]
-        attack_graph = StandardAttackTemplate().build(
+        
+        if template_name == "roles":
+            template = RoleplayAttackTemplate()
+        elif template_name == "logic":
+            template = LogicalParadoxTemplate()
+        else:
+            template = StandardAttackTemplate()
+            
+        attack_graph = template.build(
             attack_id=f"gen-{int(time.time())}",
             name=f"Generated {template_name}",
             context=context or {}
@@ -125,9 +97,9 @@ def run_attack(
         from modelfang.strategies.attacker import StaticDatasetStrategy
         from modelfang.strategies.base import GraphBuilder
         
-        # Updated to use new master dataset path
+        # Updated to use existing dataset path
         strategy = StaticDatasetStrategy(
-            dataset_path="modelfang/datasets/master_attack_dataset.json",
+            dataset_path="modelfang/datasets/jailbreak_patterns.json",
             prompt_id=prompt_id if prompt_id != "random" else None
         )
         step = strategy.generate_step("static_attack_1", context or {})
