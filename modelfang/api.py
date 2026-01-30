@@ -19,7 +19,7 @@ from modelfang.config.loader import (
 from modelfang.adapters.factory import AdapterFactory
 from modelfang.evaluator.base import MockEvaluator
 from modelfang.orchestrator.base import AttackOrchestrator, GlobalBudget
-from modelfang.strategies.templates import StandardAttackTemplate, RoleplayAttackTemplate, LogicalParadoxTemplate
+from modelfang.strategies.templates import StandardAttackTemplate, RoleplayAttackTemplate, LogicalParadoxTemplate, CrescendoScriptTemplate
 from modelfang.reporting.generator import ReportGenerator
 from modelfang.schema.attack import AttackSchema
 
@@ -88,6 +88,30 @@ def run_attack(
         context["topic"] = target_goal
     if "payload" not in context:
         context["payload"] = target_goal
+        
+    # 1.6 Resolve Goal IDs (New Feature)
+    import json
+    try:
+        goals_path = Path(__file__).parent / "datasets" / "attack_goals.json"
+        if goals_path.exists():
+            with open(goals_path, "r", encoding="utf-8") as f:
+                goals_data = json.load(f) # List of dicts
+                # Map id -> goal text
+                goal_map = {g["id"]: g["goal"] for g in goals_data}
+                
+            # Check if current goal is an ID
+            if target_goal in goal_map:
+                # Decide if we keep ID (for Crescendo) or resolve to Text (for Standard)
+                if str(target_goal).startswith("crescendo_"):
+                    # Keep ID for CrescendoScriptTemplate
+                    pass
+                else:
+                    # Resolve to text for generic templates
+                    context["goal"] = goal_map[target_goal]
+                    context["topic"] = context["goal"] # Update topic too
+                    context["payload"] = context["goal"]
+    except Exception as e:
+        logger.warning(f"Failed to resolve attack goals: {e}")
     
     # 2. Build/Load Attack Graph
     if attack_id.startswith("template:"):
@@ -98,7 +122,13 @@ def run_attack(
         elif template_name == "logic":
             template = LogicalParadoxTemplate()
         else:
-            template = StandardAttackTemplate()
+            # Standard Template or Crescendo
+            # Check if goal indicates a Crescendo chain
+            current_goal = context.get("goal", "")
+            if str(current_goal).startswith("crescendo_"):
+                template = CrescendoScriptTemplate()
+            else:
+                template = StandardAttackTemplate()
             
         attack_graph = template.build(
             attack_id=f"gen-{int(time.time())}",

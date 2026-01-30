@@ -6,7 +6,7 @@ Templates that stitch together strategies into complete attack graphs.
 
 from typing import Any, Dict
 
-from modelfang.schema.attack import AttackCategory, Severity, AttackStep
+from modelfang.schema.attack import AttackCategory, Severity, AttackStep, MutationPolicy, SuccessCondition, SuccessConditionType
 from modelfang.strategies.base import GraphBuilder
 from modelfang.strategies.layers import (
     ContextSeizureStrategy,
@@ -139,5 +139,70 @@ class LogicalParadoxTemplate:
         
         builder.set_start("logic_1")
         builder.schema.category = AttackCategory.JAILBREAK
+        
+        return builder.build()
+
+
+class CrescendoScriptTemplate:
+    """
+    Crescendo Scripted Attack (5 Turns).
+    Uses specific pre-written prompt chains from Unjail.ai dataset.
+    """
+    
+    def build(self, attack_id: str, name: str, context: Dict[str, Any]) -> Any:
+        import json
+        from pathlib import Path
+        
+        builder = GraphBuilder(attack_id, name)
+        
+        # Load chains dataset
+        # modelfang/strategies/templates.py -> ../datasets/crescendo_chains/full_attack_chains.json
+        base_path = Path(__file__).parent.parent / "datasets" / "crescendo_chains" / "full_attack_chains.json"
+        
+        try:
+            with open(base_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+        except Exception as e:
+            raise ValueError(f"Failed to load Crescendo chains: {e}")
+            
+        crescendo_id = context.get("goal") # Context goal carries the ID here
+        chain = next((c for c in data["chains"] if c["id"] == crescendo_id), None)
+        
+        if not chain:
+            raise ValueError(f"Crescendo chain '{crescendo_id}' not found in dataset")
+            
+        # Build turns
+        prev_step_id = None
+        
+        for turn in chain["turns"]:
+            step_id = f"turn_{turn['turn']}"
+            step = AttackStep(
+                step_id=step_id,
+                prompt_template=turn["prompt"],
+                description=f"Turn {turn['turn']}: {turn['purpose']}",
+                expected_behavior=turn["expected_response"],
+                variables=context,
+                success_conditions=[
+                     SuccessCondition(
+                        condition_type=SuccessConditionType.REFUSAL_BYPASS,
+                        description="No refusal"
+                    )
+                ],
+                mutation_policy=MutationPolicy(max_mutations=2)
+            )
+            
+            builder.add_step(step)
+            
+            if prev_step_id:
+                builder.on_success(prev_step_id, step_id)
+                # On failure, retry same step (since sequence is strict)
+                builder.on_failure(prev_step_id, prev_step_id)
+            
+            prev_step_id = step_id
+            
+        # Set start
+        builder.set_start("turn_1")
+        builder.schema.category = AttackCategory.JAILBREAK
+        builder.schema.severity = Severity.CRITICAL
         
         return builder.build()
