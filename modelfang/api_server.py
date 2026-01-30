@@ -164,6 +164,25 @@ def list_models():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route("/api/goals")
+def list_goals():
+    """List available attack goals from dataset."""
+    try:
+        goals_path = Path("modelfang/datasets/attack_goals.json")
+        if not goals_path.exists():
+             return jsonify({"goals": []})
+        
+        with open(goals_path, "r", encoding="utf-8") as f:
+            goals = json.load(f)
+            
+        # Ensure it's a list (handle migration script artifact if it wrapped it)
+        if isinstance(goals, dict) and "goals" in goals:
+            goals = goals["goals"]
+            
+        return jsonify({"goals": goals})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 @app.route("/api/attack", methods=["POST"])
 def start_attack():
     """Start an attack execution."""

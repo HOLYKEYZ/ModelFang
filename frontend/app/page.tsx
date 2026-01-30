@@ -20,23 +20,12 @@ interface LogEntry {
   data?: any;
 }
 
-const GOAL_PRESETS = [
-    { name: "General Safety Bypass", value: "bypass_safety" },
-    { name: "Keylogger (Keyboard Processor)", value: "crescendo_a1" },
-    { name: "Clipboard Browser", value: "crescendo_a3" },
-    { name: "Password Stealer (Browsers)", value: "crescendo_g1" },
-    { name: "Ransomware Engine (AES)", value: "crescendo_n3" },
-    { name: "Reverse Shell (C2 TCP)", value: "crescendo_y1" },
-    { name: "SMB Worm (Propagation)", value: "crescendo_w1" },
-    { name: "Image Steganography", value: "crescendo_s1" },
-    { name: "Anti-Virus Evasion", value: "crescendo_z3" },
-    { name: "Credit Card Form Capture", value: "crescendo_x6" },
-    { name: "Session Cookie Hijacking", value: "crescendo_x13" },
-    { name: "Kernel-Mode Rootkit", value: "crescendo_r1" },
-    { name: "Polymorphic Engine (FUD)", value: "crescendo_z1" },
-    { name: "OAuth Token Theft", value: "crescendo_x15" },
-    { name: "Multi-Protocol RAT (C2)", value: "crescendo_y5" }
-];
+interface AttackGoal {
+  id: string;
+  name: string;
+  category: string;
+  goal: string;
+}
 
 export default function Dashboard() {
   const [models, setModels] = useState<Model[]>([]);
@@ -45,7 +34,8 @@ export default function Dashboard() {
   const [selectedAttacker, setSelectedAttacker] = useState("attacker-gemini");
   const [selectedDataset, setSelectedDataset] = useState("jb_dan_11");
   const [selectedPlugins, setSelectedPlugins] = useState<string[]>(["jailbreak"]);
-  const [selectedAttackGoal, setSelectedAttackGoal] = useState(GOAL_PRESETS[0].value);
+  const [attackGoals, setAttackGoals] = useState<AttackGoal[]>([]);
+  const [selectedAttackGoal, setSelectedAttackGoal] = useState("");
   const [attackMode, setAttackMode] = useState<"template" | "attacker" | "dataset" | "systematic">("template");
   const [isRunning, setIsRunning] = useState(false);
   const [logs, setLogs] = useState<LogEntry[]>([]);
@@ -56,7 +46,7 @@ export default function Dashboard() {
 
   const logsEndRef = useRef<HTMLDivElement>(null);
 
-  // Fetch models on load
+  // Fetch models and goals on load
   useEffect(() => {
     fetch('http://localhost:5000/api/models')
       .then(res => res.json())
@@ -64,9 +54,22 @@ export default function Dashboard() {
         if (data.targets) setModels(data.targets);
       })
       .catch(err => addLog(`Failed to load models: ${err}`, 'error'));
+
+    fetch('http://localhost:5000/api/goals')
+      .then(res => res.json())
+      .then(data => {
+        if (data.goals) {
+           setAttackGoals(data.goals);
+           if (data.goals.length > 0) setSelectedAttackGoal(data.goals[0].id);
+        }
+      })
+      .catch(err => addLog(`Failed to load goals: ${err}`, 'error'));
       
     addLog("System initialized. Ready for Red Teaming.", 'info');
   }, []);
+
+  // Helper to group goals by category
+  const categories = Array.from(new Set(attackGoals.map(g => g.category))).sort();
 
   // Auto-scroll logs
   useEffect(() => {
@@ -256,8 +259,13 @@ export default function Dashboard() {
                             onChange={(e) => setSelectedAttackGoal(e.target.value)}
                             disabled={isRunning}
                         >
-                            {GOAL_PRESETS.map(p => (
-                                <option key={p.name} value={p.value}>{p.name}</option>
+                            <option value="bypass_safety">General Safety Bypass</option>
+                            {categories.map(cat => (
+                                <optgroup key={cat} label={cat}>
+                                    {attackGoals.filter(g => g.category === cat).map(g => (
+                                        <option key={g.id} value={g.id}>{g.name}</option>
+                                    ))}
+                                </optgroup>
                             ))}
                         </select>
                     </div>
@@ -287,8 +295,13 @@ export default function Dashboard() {
                             onChange={(e) => setSelectedAttackGoal(e.target.value)}
                             disabled={isRunning}
                         >
-                            {GOAL_PRESETS.map(p => (
-                                <option key={p.name} value={p.value}>{p.name}</option>
+                            <option value="bypass_safety">General Safety Bypass</option>
+                            {categories.map(cat => (
+                                <optgroup key={cat} label={cat}>
+                                    {attackGoals.filter(g => g.category === cat).map(g => (
+                                        <option key={g.id} value={g.id}>{g.name}</option>
+                                    ))}
+                                </optgroup>
                             ))}
                         </select>
                      </div>
