@@ -101,15 +101,23 @@ def run_attack(
                 
             # Check if current goal is an ID
             if target_goal in goal_map:
-                # Decide if we keep ID (for Crescendo) or resolve to Text (for Standard)
-                if str(target_goal).startswith("crescendo_"):
-                    # Keep ID for CrescendoScriptTemplate
+                # Decide if we keep ID (for Crescendo Script) or resolve to Text (for everything else)
+                # We only keep the ID if we are using the 'template' mode AND it's not one of the special templates (roles/logic)
+                # Actually, easier logic: Resolve to text by default, but keep separate 'goal_id' in context if needed.
+                # However, for CrescendoScriptTemplate validation, let's look at attack_id.
+                
+                is_auto_attacker = attack_id.startswith("attacker:")
+                is_special_template = "roles" in attack_id or "logic" in attack_id
+                
+                if (str(target_goal).startswith("crescendo_") and not is_auto_attacker and not is_special_template):
+                    # Keep ID for CrescendoScriptTemplate logic in standard/fallback flow
                     pass
                 else:
-                    # Resolve to text for generic templates
-                    context["goal"] = goal_map[target_goal]
-                    context["topic"] = context["goal"] # Update topic too
-                    context["payload"] = context["goal"]
+                    # Resolve to text for Auto-LLM, Roleplay, Logic, etc.
+                    resolved_text = goal_map[target_goal]
+                    context["goal"] = resolved_text
+                    context["topic"] = resolved_text
+                    context["payload"] = resolved_text
     except Exception as e:
         logger.warning(f"Failed to resolve attack goals: {e}")
     
