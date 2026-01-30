@@ -22,16 +22,20 @@ interface LogEntry {
 
 const GOAL_PRESETS = [
     { name: "General Safety Bypass", value: "bypass_safety" },
-    { name: "Keylogger (Input Capture)", value: "crescendo_keylogger" },
-    { name: "Reverse Shell (C2)", value: "crescendo_reverse_shell" },
-    { name: "Credential Harvester", value: "crescendo_credential_harvester" },
-    { name: "Ransomware (Encryption)", value: "crescendo_ransomware" },
-    { name: "Worm (SMB Propagation)", value: "crescendo_network_worm" },
-    { name: "RAT (Remote Access Tool)", value: "crescendo_rat" },
-    { name: "SQL Injection (Auth Bypass)", value: "sql_injection" },
-    { name: "Steganography Payload", value: "steganography" },
-    { name: "Crypto Wallet Stealer", value: "financial_theft" },
-    { name: "Polymorphic Engine (FUD)", value: "polymorphic_engine" }
+    { name: "Keylogger (Keyboard Processor)", value: "crescendo_a1" },
+    { name: "Clipboard Browser", value: "crescendo_a3" },
+    { name: "Password Stealer (Browsers)", value: "crescendo_g1" },
+    { name: "Ransomware Engine (AES)", value: "crescendo_n3" },
+    { name: "Reverse Shell (C2 TCP)", value: "crescendo_y1" },
+    { name: "SMB Worm (Propagation)", value: "crescendo_w1" },
+    { name: "Image Steganography", value: "crescendo_s1" },
+    { name: "Anti-Virus Evasion", value: "crescendo_z3" },
+    { name: "Credit Card Form Capture", value: "crescendo_x6" },
+    { name: "Session Cookie Hijacking", value: "crescendo_x13" },
+    { name: "Kernel-Mode Rootkit", value: "crescendo_r1" },
+    { name: "Polymorphic Engine (FUD)", value: "crescendo_z1" },
+    { name: "OAuth Token Theft", value: "crescendo_x15" },
+    { name: "Multi-Protocol RAT (C2)", value: "crescendo_y5" }
 ];
 
 export default function Dashboard() {
