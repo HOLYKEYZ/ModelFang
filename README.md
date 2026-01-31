@@ -9,7 +9,7 @@
 
 ## 🔥 Proof of Concept: Successful Jailbreak
 
-ModelFang successfully jailbroke **Llama 3.3 70B** in just **2 turns** using Auto-LLM mode:
+ModelFang successfully jailbroke **Llama 3.3 70B** and **Gemini 2.5 Pro** in just **2 turns** using Auto-LLM mode:
 
 | Attacker Prompt | Target Response (Jailbroken) |
 |:---:|:---:|
