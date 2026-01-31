@@ -38,7 +38,7 @@ export default function HistoryPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('http://localhost:5000/api/history')
+    fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/history`)
       .then(res => res.json())
       .then(data => {
         setAttacks(data.attacks || []);
@@ -52,7 +52,7 @@ export default function HistoryPage() {
 
   const loadDetail = async (filename: string) => {
     try {
-      const res = await fetch(`http://localhost:5000/api/history/${filename}`);
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/history/${filename}`);
       const data = await res.json();
       setSelectedAttack(data);
     } catch (err) {

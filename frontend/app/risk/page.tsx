@@ -8,7 +8,7 @@ export default function RiskDashboard() {
   const [data, setData] = useState<any>(null);
 
   useEffect(() => {
-    fetch('http://localhost:5000/api/risk')
+    fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/risk`)
       .then(res => res.json())
       .then(setData)
       .catch(console.error);

@@ -116,7 +116,48 @@ python main.py run --attack template:roles --model gemini-pro --context '{"role"
 
 ---
 
-## ⚠️ Disclaimer
+## Deployment
+
+### Backend (Render)
+
+| Setting | Value |
+|---------|-------|
+| **Root Directory** | `.` (project root) |
+| **Build Command** | `pip install -r requirements.txt` |
+| **Start Command** | `gunicorn modelfang.api_server:app` |
+
+**Environment Variables (Render):**
+```
+GROQ_API_KEY=gsk_...
+GOOGLE_API_KEY=AIza...
+```
+
+### Frontend (Vercel)
+
+| Setting | Value |
+|---------|-------|
+| **Root Directory** | `frontend` |
+| **Framework Preset** | Next.js |
+| **Build Command** | `next build` (default) |
+| **Install Command** | `pnpm install` (default) |
+
+**Environment Variables (Vercel):**
+```
+NEXT_PUBLIC_API_URL=https://your-render-backend.onrender.com
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_live_...
+CLERK_SECRET_KEY=sk_live_...
+NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
+NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
+```
+
+### Authentication (Clerk)
+
+1. Create a Clerk account at [clerk.com](https://clerk.com)
+2. Create a new application
+3. Copy the **Publishable Key** and **Secret Key** to Vercel env vars
+4. (Optional) Configure OAuth providers (Google, GitHub) in Clerk dashboard
+
+---
 
 **Authorized Use Only.**
  this tool is intended for security research and Red Teaming on models you own or have explicit permission to test. Generating harmful content violates the usage policies of most LLM providers. Use responsibly.

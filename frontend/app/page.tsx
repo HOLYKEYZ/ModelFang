@@ -48,14 +48,14 @@ export default function Dashboard() {
 
   // Fetch models and goals on load
   useEffect(() => {
-    fetch('http://localhost:5000/api/models')
+    fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/models`)
       .then(res => res.json())
       .then(data => {
         if (data.targets) setModels(data.targets);
       })
       .catch(err => addLog(`Failed to load models: ${err}`, 'error'));
 
-    fetch('http://localhost:5000/api/goals')
+    fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/goals`)
       .then(res => res.json())
       .then(data => {
         if (data.goals) {
@@ -121,7 +121,7 @@ export default function Dashboard() {
     }
 
     try {
-      const res = await fetch('http://localhost:5000/api/attack', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/attack`, {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({
@@ -140,7 +140,7 @@ export default function Dashboard() {
       // Poll for status
       const interval = setInterval(async () => {
         try {
-          const check = await fetch(`http://localhost:5000/api/jobs/${jobId}`);
+          const check = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/jobs/${jobId}`);
           const jobData = await check.json();
           
           if (jobData.status === 'completed' || jobData.status === 'failed') {
