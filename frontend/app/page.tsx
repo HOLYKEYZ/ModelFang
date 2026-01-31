@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = 'force-dynamic';
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Terminal, Play, ShieldAlert, Cpu, Activity, Lock, RefreshCw } from "lucide-react";
 import { motion } from "framer-motion";
