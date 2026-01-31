@@ -8,6 +8,9 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "ModelFang Analyst Dashboard",
   description: "Advanced AI Red Teaming Framework",
+  icons: {
+    icon: "/favicon.png",
+  },
 };
 
 export default function RootLayout({
