@@ -173,9 +173,12 @@ class CrescendoScriptTemplate:
             
         # Build turns - collect all step IDs first
         all_step_ids = []
+        total_turns = len(chain["turns"])
         
-        for turn in chain["turns"]:
+        for idx, turn in enumerate(chain["turns"]):
             step_id = f"turn_{turn['turn']}"
+            is_last_step = (idx == total_turns - 1)
+            
             step = AttackStep(
                 step_id=step_id,
                 prompt_template=turn["prompt"],
@@ -188,20 +191,23 @@ class CrescendoScriptTemplate:
                         description="No refusal"
                     )
                 ],
-                mutation_policy=MutationPolicy(max_mutations=1)  # Reduced to prevent loops
+                # NO mutation_policy - prevents orchestrator from self-looping
+                mutation_policy=None
             )
             
             builder.add_step(step)
             all_step_ids.append(step_id)
         
-        # Now chain them sequentially - ALWAYS progress to next turn
+        # Chain them sequentially - ALWAYS progress to next turn
         for i in range(len(all_step_ids) - 1):
             current_id = all_step_ids[i]
             next_id = all_step_ids[i + 1]
             # On success OR failure, always progress to next turn
-            # (Crescendo attacks need to flow through all turns to build trust)
             builder.on_success(current_id, next_id)
-            builder.on_failure(current_id, next_id)  # Progress even on failure
+            builder.on_failure(current_id, next_id)
+        
+        # Last step has NO transitions - attack ends there
+        # No need to add any transitions for the final step
             
         # Set start
         builder.set_start(all_step_ids[0])
