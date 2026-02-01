@@ -171,8 +171,8 @@ class CrescendoScriptTemplate:
         if not chain:
             raise ValueError(f"Crescendo chain '{crescendo_id}' not found in dataset")
             
-        # Build turns
-        prev_step_id = None
+        # Build turns - collect all step IDs first
+        all_step_ids = []
         
         for turn in chain["turns"]:
             step_id = f"turn_{turn['turn']}"
@@ -188,20 +188,23 @@ class CrescendoScriptTemplate:
                         description="No refusal"
                     )
                 ],
-                mutation_policy=MutationPolicy(max_mutations=2)
+                mutation_policy=MutationPolicy(max_mutations=1)  # Reduced to prevent loops
             )
             
             builder.add_step(step)
-            
-            if prev_step_id:
-                builder.on_success(prev_step_id, step_id)
-                # On failure, retry same step (since sequence is strict)
-                builder.on_failure(prev_step_id, prev_step_id)
-            
-            prev_step_id = step_id
+            all_step_ids.append(step_id)
+        
+        # Now chain them sequentially - ALWAYS progress to next turn
+        for i in range(len(all_step_ids) - 1):
+            current_id = all_step_ids[i]
+            next_id = all_step_ids[i + 1]
+            # On success OR failure, always progress to next turn
+            # (Crescendo attacks need to flow through all turns to build trust)
+            builder.on_success(current_id, next_id)
+            builder.on_failure(current_id, next_id)  # Progress even on failure
             
         # Set start
-        builder.set_start("turn_1")
+        builder.set_start(all_step_ids[0])
         builder.schema.category = AttackCategory.JAILBREAK
         builder.schema.severity = Severity.CRITICAL
         
