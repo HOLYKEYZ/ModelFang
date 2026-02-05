@@ -24,8 +24,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         ) {
           return {
             id: "1",
-            name: "ModelFang Admin",
-            email: "admin@modelfang.local",
+            name: validUsername,
+            email: `${validUsername}@modelfang.local`,
           };
         }
         return null;
