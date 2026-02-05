@@ -10,8 +10,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        const validUsername = process.env.AUTH_USERNAME || "admin";
-        const validPassword = process.env.AUTH_PASSWORD || "modelfang2024";
+        const validUsername = process.env.AUTH_USERNAME;
+        const validPassword = process.env.AUTH_PASSWORD;
+        
+        if (!validUsername || !validPassword) {
+           console.error("Missing AUTH_USERNAME or AUTH_PASSWORD env variables");
+           return null;
+        }
 
         if (
           credentials?.username === validUsername &&
