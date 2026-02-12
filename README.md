@@ -46,7 +46,7 @@ pip install -r requirements.txt
 ### 2. Setup Frontend (UI)
 ```bash
 cd frontend
-npm install
+pnpm install
 cd ..
 ```
 
@@ -88,7 +88,7 @@ cd ..
 2.  **Start Frontend UI**:
     ```bash
     cd frontend
-    npm run dev
+    pnpm run dev
     ```
     *(Runs on port 3000)*
 
