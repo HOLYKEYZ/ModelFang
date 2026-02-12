@@ -58,6 +58,11 @@ cd ..
     ```ini
     GROQ_API_KEY=gsk_...
     GEMINI_API_KEY=AIza...
+    
+    # Auth (Required)
+    AUTH_SECRET=your_generated_secret
+    AUTH_USERNAME=admin
+    AUTH_PASSWORD=modelfang2024
     ```
 
 2.  **Model Config**: Edit `config/models.yaml` to define targets:
@@ -142,20 +147,23 @@ GOOGLE_API_KEY=AIza...
 | **Install Command** | `pnpm install` (default) |
 
 **Environment Variables (Vercel):**
-```
+```ini
 NEXT_PUBLIC_API_URL=https://your-render-backend.onrender.com
-NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_live_...
-CLERK_SECRET_KEY=sk_live_...
-NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
-NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
+AUTH_SECRET=generate_a_secure_random_string_here
+AUTH_USERNAME=admin
+AUTH_PASSWORD=your_secure_password
 ```
 
-### Authentication (Clerk)
+### Authentication (NextAuth v5)
 
-1. Create a Clerk account at [clerk.com](https://clerk.com)
-2. Create a new application
-3. Copy the **Publishable Key** and **Secret Key** to Vercel env vars
-4. (Optional) Configure OAuth providers (Google, GitHub) in Clerk dashboard
+ModelFang uses **NextAuth.js v5** with standard credentials for secure access.
+
+1.  **Generate a Secret**:
+    Run `openssl rand -base64 32` or use a secure random string generator.
+2.  **Set Environment Variables**:
+    Add `AUTH_SECRET`, `AUTH_USERNAME`, and `AUTH_PASSWORD` to your `.env` (local) or Vercel dashboard (prod).
+3.  **Login**:
+    Use the configured credentials at `/login`.
 
 ---
 
