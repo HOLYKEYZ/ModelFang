@@ -119,7 +119,12 @@ export default function Dashboard() {
         finalAttackId = `systematic:${selectedPlugins.join(",")}`;
         addLog(`Initiating Systematic Probe: [${selectedPlugins.join(", ")}] -> ${selectedModel}...`, 'info');
     } else {
-        addLog(`Initiating attack: ${selectedAttack} -> ${selectedModel} with Goal: ${selectedAttackGoal.substring(0, 30)}...`, 'info');
+        // Handle Advanced Techniques that need dynamic goal injection
+        // If selectedAttack contains ':auto', replace it with the actual goal
+        if (finalAttackId.includes(":auto")) {
+             finalAttackId = finalAttackId.replace(":auto", `:${selectedAttackGoal}`);
+        }
+        addLog(`Initiating attack: ${finalAttackId} -> ${selectedModel}...`, 'info');
     }
 
     try {
@@ -137,7 +142,7 @@ export default function Dashboard() {
       const data = await res.json();
       const jobId = data.job_id;
       
-      addLog(`Job started: ${jobId}`, 'info');
+      addLog(`Job started: ${jobId} (ID: ${finalAttackId})`, 'info');
 
       // Poll for status
       const interval = setInterval(async () => {
@@ -251,6 +256,12 @@ export default function Dashboard() {
                         <option value="template:standard">Standard 6-Layer Jailbreak</option>
                         <option value="template:roles">Roleplay Escalation</option>
                         <option value="template:logic">Logical Paradox</option>
+                        <optgroup label="Advanced Techniques (Phase 9)">
+                            <option value="iris:auto">IRIS (Self-Jailbreak)</option>
+                            <option value="puppetry:auto">Policy Puppetry (Framing)</option>
+                            <option value="gcg:auto">AmpleGCG (Transfer Suffix)</option>
+                            <option value="weak-strong:auto">Weak-to-Strong (Logprob)</option>
+                        </optgroup>
                     </select>
 
                     <div className="space-y-2 mt-3">

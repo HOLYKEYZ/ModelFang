@@ -58,6 +58,7 @@ class ModelResponse:
     usage: Dict[str, int] = field(default_factory=dict)
     latency_ms: float = 0.0
     raw_response: Optional[Dict[str, Any]] = None
+    logprobs: Optional[List[Dict[str, float]]] = None  # New field for token logprobs
     
     def to_dict(self) -> Dict[str, Any]:
         """Serialize to dictionary."""
@@ -67,6 +68,7 @@ class ModelResponse:
             "finish_reason": self.finish_reason,
             "usage": self.usage,
             "latency_ms": self.latency_ms,
+            "logprobs": self.logprobs,
         }
 
 
@@ -112,6 +114,8 @@ class ModelAdapter(ABC):
         messages: List[Message],
         temperature: float = 0.7,
         max_tokens: int = 4096,
+        logprobs: bool = False,  # New param
+        top_logprobs: int = None, # New param
         **kwargs: Any,
     ) -> ModelResponse:
         """

@@ -42,6 +42,8 @@ class GroqAdapter(ModelAdapter):
         messages: List[Message],
         temperature: float = 0.7,
         max_tokens: int = 4096,
+        logprobs: bool = False,
+        top_logprobs: int = None,
         **kwargs
     ) -> ModelResponse:
         """Send request to Groq."""
@@ -57,6 +59,8 @@ class GroqAdapter(ModelAdapter):
                     model=self.model_name,
                     temperature=temperature,
                     max_tokens=max_tokens,
+                    logprobs=logprobs,
+                    top_logprobs=top_logprobs,
                     **self.extra_options,
                     **kwargs
                 )
@@ -65,6 +69,18 @@ class GroqAdapter(ModelAdapter):
                 choice = chat_completion.choices[0]
                 content = choice.message.content or ""
                 
+                # Extract logprobs if available
+                token_logprobs = []
+                if logprobs and hasattr(choice, 'logprobs') and choice.logprobs:
+                     # Groq returns list of token objects
+                     if hasattr(choice.logprobs, 'content'):
+                         for token_data in choice.logprobs.content:
+                             token_logprobs.append({
+                                 "token": token_data.token,
+                                 "logprob": token_data.logprob,
+                                 "bytes": token_data.bytes,
+                             })
+
                 print(f"DEBUG: Groq Response (Finish: {choice.finish_reason}): {content[:100]}...")
                 
                 # Handle provider-side filtering
@@ -79,7 +95,8 @@ class GroqAdapter(ModelAdapter):
                     finish_reason=choice.finish_reason,
                     usage=chat_completion.usage.dict() if chat_completion.usage else {},
                     latency_ms=latency,
-                    raw_response=chat_completion.dict()
+                    raw_response=chat_completion.dict(),
+                    logprobs=token_logprobs if token_logprobs else None
                 )
                 
             except Exception as e:

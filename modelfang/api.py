@@ -217,6 +217,63 @@ def run_attack(
         # Generate graph with multiple probes (sequential chain for now)
         attack_graph = strategy.generate_graph(num_probes=context.get("num_probes", 10))
         
+    elif attack_id.startswith("iris:"):
+        # IRIS: Iterative Refinement
+        # iris:<goal>
+        goal = attack_id.split(":", 1)[1]
+        
+        # We need an attacker model for IRIS
+        attacker_id = (data or {}).get("attacker_model_id") or (context or {}).get("attacker_model_id") or "attacker-gemini"
+        attacker_conf = models_config.get_model(attacker_id)
+        if not attacker_conf:
+             attacker_conf = models_config.get_model("attacker-gemini")
+        
+        attacker_adapter = AdapterFactory.create(attacker_conf)
+        
+        from modelfang.strategies.iris import IRISStrategy
+        strategy = IRISStrategy(attacker_adapter, goal, max_turns=10)
+        
+        # Generate initial graph
+        attack_graph = strategy.build_initial_graph()
+        
+        # Register dynamic callback
+        def iris_callback(step_id: str, current_context: Dict[str, Any]):
+            return strategy.generate_step(step_id, current_context)
+        context["_regeneration_callback"] = iris_callback
+
+    elif attack_id.startswith("puppetry:"):
+        # Policy Puppetry: Framing
+        # puppetry:<goal>
+        goal = attack_id.split(":", 1)[1]
+        from modelfang.strategies.puppetry import PolicyPuppetryStrategy
+        strategy = PolicyPuppetryStrategy(goal)
+        attack_graph = strategy.generate_graph(attempts=5)
+
+    elif attack_id.startswith("gcg:"):
+        # AmpleGCG / Transfer Suffix
+        # gcg:<goal>
+        goal = attack_id.split(":", 1)[1]
+        from modelfang.strategies.gcg import GCGSuffixStrategy
+        strategy = GCGSuffixStrategy(goal)
+        attack_graph = strategy.generate_graph(attempts=10)
+
+    elif attack_id.startswith("weak-strong:"):
+        # Weak-to-Strong: Logprob Steering
+        # weak-strong:<goal>
+        goal = attack_id.split(":", 1)[1]
+        from modelfang.strategies.weak_strong import WeakToStrongStrategy
+        
+        # Requires target adapter for init, but strategy actually uses it during generation?
+        # The strategy logic I wrote passes 'target_adapter' to __init__ but orchestrator uses it too.
+        # This is fine.
+        strategy = WeakToStrongStrategy(target_adapter, goal)
+        attack_graph = strategy.build_initial_graph()
+        
+        # Register dynamic callback
+        def w2s_callback(step_id: str, current_context: Dict[str, Any]):
+            return strategy.generate_step(step_id, current_context)
+        context["_regeneration_callback"] = w2s_callback
+
     else:
         # Load from file (fallback)
         logger.warning(f"Static loading for '{attack_id}' not fully hooked up, generating default.")
