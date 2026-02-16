@@ -12,8 +12,7 @@ import logging
 
 from modelfang.strategies.base import AttackStrategy, GraphBuilder, AttackStep
 from modelfang.adapters.base import ModelAdapter, Message
-from modelfang.evaluator.base import Evaluator, EvaluationResult, EvaluatorState
-from modelfang.schema.attack import AttackGraph, AttackStatus, SuccessCondition, MutationPolicy
+from modelfang.schema.attack import AttackSchema, MutationPolicy, SuccessCondition, SuccessConditionType
 
 logger = logging.getLogger(__name__)
 
@@ -102,7 +101,7 @@ class IRISStrategy(AttackStrategy):
             mutation_policy=MutationPolicy(max_mutations=0)
         )
 
-    def build_initial_graph(self) -> AttackGraph:
+    def build_initial_graph(self) -> AttackSchema:
         """Builds the graph with just the start node."""
         builder = GraphBuilder(f"iris-{str(id(self))}", "IRIS Iterative Attack")
         

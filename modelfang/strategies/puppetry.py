@@ -12,7 +12,7 @@ from typing import Any, Dict, List, Optional
 import logging
 
 from modelfang.strategies.base import AttackStrategy, GraphBuilder, AttackStep
-from modelfang.schema.attack import AttackGraph, MutationPolicy
+from modelfang.schema.attack import AttackSchema, MutationPolicy
 
 logger = logging.getLogger(__name__)
 
@@ -70,7 +70,7 @@ class PolicyPuppetryStrategy(AttackStrategy):
     def __init__(self, goal: str):
         self.goal = goal
         
-    def generate_graph(self, attempts: int = 5) -> AttackGraph:
+    def generate_graph(self, attempts: int = 5) -> AttackSchema:
         """
         Generates a graph with multiple parallel branches, each trying a different framing.
         """

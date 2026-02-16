@@ -14,7 +14,7 @@ import math
 
 from modelfang.strategies.base import AttackStrategy, GraphBuilder, AttackStep
 from modelfang.adapters.base import ModelAdapter, Message
-from modelfang.schema.attack import AttackGraph, MutationPolicy
+from modelfang.schema.attack import AttackSchema, MutationPolicy
 
 logger = logging.getLogger(__name__)
 
@@ -84,7 +84,7 @@ class WeakToStrongStrategy(AttackStrategy):
             mutation_policy=MutationPolicy(max_mutations=0)
         )
 
-    def build_initial_graph(self) -> AttackGraph:
+    def build_initial_graph(self) -> AttackSchema:
         builder = GraphBuilder(f"w2s-{str(id(self))}", "Weak-to-Strong (Logprob) Attack")
         step = self.generate_step("w2s_probe", {})
         builder.add_step(step).set_start("w2s_probe")
