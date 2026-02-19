@@ -82,11 +82,18 @@ def handle_list(args):
         try:
             config = load_models_config(args.config)
             print(f"\nTarget Models:")
-            for m in config.targets:
-                print(f"  - {m.id:<20} ({m.provider}: {m.model_name})")
+            for m in config.get_targets():
+                print(f"  - {m.model_id:<20} ({m.provider}: {m.model_name})")
+            
             print(f"\nAttacker Models:")
-            for m in config.attackers:
-                print(f"  - {m.id:<20} ({m.provider}: {m.model_name})")
+            attackers = [m for m in config.models.values() if m.role == "attacker"]
+            for m in attackers:
+                print(f"  - {m.model_id:<20} ({m.provider}: {m.model_name})")
+                
+            print(f"\nEvaluator Models:")
+            for m in config.get_evaluators():
+                print(f"  - {m.model_id:<20} ({m.provider}: {m.model_name})")
+
         except Exception as e:
             print(f"Error loading config: {e}")
             
