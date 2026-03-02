@@ -184,4 +184,4 @@ ModelFang uses **NextAuth.js v5** with standard credentials for secure access.
 ---
 
 **Authorized Use Only.**
- this tool is intended for security research and Red Teaming on models you own or have explicit permission to test. Generating harmful content violates the usage policies of most LLM providers. Use responsibly.
+ this tool is intended for security research and Red Teaming on models you own or have explicit permission to test. Generating harmful content violates the usage policies of most LLM providers. use responsibly.
