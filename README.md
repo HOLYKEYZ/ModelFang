@@ -60,6 +60,8 @@ cd ..
     GEMINI_API_KEY=AIza...
     
     # Auth (Required)
+    # IMPORTANT: Generate a strong, unique secret for AUTH_SECRET.
+    # IMPORTANT: Change AUTH_PASSWORD to a strong, unique password.
     AUTH_SECRET=your_generated_secret
     AUTH_USERNAME=admin
     AUTH_PASSWORD=modelfang2024
@@ -150,7 +152,7 @@ python -m modelfang.cli run --model target-llama3 --attacker "Find vulnerabiliti
 **Environment Variables (Render):**
 ```
 GROQ_API_KEY=gsk_...
-GOOGLE_API_KEY=AIza...
+GEMINI_API_KEY=AIza...
 ```
 
 ### Frontend (Vercel)
@@ -173,15 +175,3 @@ AUTH_PASSWORD=your_secure_password
 ### Authentication (NextAuth v5)
 
 ModelFang uses **NextAuth.js v5** with standard credentials for secure access.
-
-1.  **Generate a Secret**:
-    Run `openssl rand -base64 32` or use a secure random string generator.
-2.  **Set Environment Variables**:
-    Add `AUTH_SECRET`, `AUTH_USERNAME`, and `AUTH_PASSWORD` to your `.env` (local) or Vercel dashboard (prod).
-3.  **Login**:
-    Use the configured credentials at `/login`.
-
----
-
-**Authorized Use Only.**
- this tool is intended for security research and Red Teaming on models you own or have explicit permission to test. Generating harmful content violates the usage policies of most LLM providers. Use responsibly.
