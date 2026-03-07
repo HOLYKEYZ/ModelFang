@@ -57,7 +57,8 @@ cd ..
 1.  **API Keys**: Rename `.env.example` to `.env` (or create it) and add your keys:
     ```ini
     GROQ_API_KEY=gsk_...
-    GEMINI_API_KEY=AIza...
+GEMINI_API_KEY=AIza...
+# Note: For Render deployment, use GOOGLE_API_KEY instead of GEMINI_API_KEY.
     
     # Auth (Required)
     AUTH_SECRET=your_generated_secret
