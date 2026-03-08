@@ -58,7 +58,6 @@ cd ..
     ```ini
     GROQ_API_KEY=gsk_...
     GEMINI_API_KEY=AIza...
-    # Note: For Render deployment, use GOOGLE_API_KEY instead of GEMINI_API_KEY.
     
     # Auth (Required)
     AUTH_SECRET=your_generated_secret
@@ -66,10 +65,10 @@ cd ..
     AUTH_PASSWORD=modelfang2024
     ```
 
-1.  **Generate a Secret**:
+2.  **Generate a Secret**:
     Run `openssl rand -base64 32` or use a secure random string generator.
 
-2.  **Model Config**: Edit `config/models.yaml` to define targets:
+3.  **Model Config**: Edit `config/models.yaml` to define targets:
     ```yaml
     llama3-70b:
       provider: groq
