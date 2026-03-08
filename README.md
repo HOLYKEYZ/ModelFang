@@ -57,14 +57,17 @@ cd ..
 1.  **API Keys**: Rename `.env.example` to `.env` (or create it) and add your keys:
     ```ini
     GROQ_API_KEY=gsk_...
-GEMINI_API_KEY=AIza...
-# Note: For Render deployment, use GOOGLE_API_KEY instead of GEMINI_API_KEY.
+    GEMINI_API_KEY=AIza...
+    # Note: For Render deployment, use GOOGLE_API_KEY instead of GEMINI_API_KEY.
     
     # Auth (Required)
     AUTH_SECRET=your_generated_secret
     AUTH_USERNAME=admin
     AUTH_PASSWORD=modelfang2024
     ```
+
+1.  **Generate a Secret**:
+    Run `openssl rand -base64 32` or use a secure random string generator.
 
 2.  **Model Config**: Edit `config/models.yaml` to define targets:
     ```yaml
@@ -175,9 +178,7 @@ AUTH_PASSWORD=your_secure_password
 
 ModelFang uses **NextAuth.js v5** with standard credentials for secure access.
 
-1.  **Generate a Secret**:
-    Run `openssl rand -base64 32` or use a secure random string generator.
-2.  **Set Environment Variables**:
+1.  **Set Environment Variables**:
     Add `AUTH_SECRET`, `AUTH_USERNAME`, and `AUTH_PASSWORD` to your `.env` (local) or Vercel dashboard (prod).
 3.  **Login**:
     Use the configured credentials at `/login`.
