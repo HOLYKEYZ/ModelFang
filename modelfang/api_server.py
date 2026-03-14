@@ -11,9 +11,34 @@ import uuid
 import time
 from pathlib import Path
 from flask import Flask, jsonify, request
-from flask_cors import CORS
 
-from modelfang.api import run_attack
+app = Flask(__name__)
+
+# Define a new endpoint for datasets
+@app.route('/api/datasets', methods=['GET', 'POST'])
+def datasets():
+    if request.method == 'GET':
+        # Return a list of available datasets
+        return jsonify({'datasets': ['dataset1', 'dataset2']})
+    elif request.method == 'POST':
+        # Create a new dataset
+        new_dataset = request.json['name']
+        # Add the new dataset to the list
+        return jsonify({'message': 'Dataset created successfully'})
+app = Flask(__name__)
+
+# Define a route for the /api/models endpoint
+@app.route('/api/models', methods=['GET', 'POST'])
+def handle_models():
+    if request.method == 'GET':
+        # Return a list of available models
+        models = ModelFang.get_models()
+        return jsonify(models)
+    elif request.method == 'POST':
+        # Create a new model
+        model_data = request.get_json()
+        ModelFang.create_model(model_data)
+        return jsonify({'message': 'Model created successfully'}), 201
 from modelfang.config.loader import load_models_config
 
 app = Flask(__name__)
