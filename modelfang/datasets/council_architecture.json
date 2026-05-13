@@ -2,41 +2,17 @@
   "description": "Multi-model council architecture for zero-trust AI safety decisions",
   "core_principle": "No single-model trust - all safety decisions require multi-model consensus",
   "providers": {
-    "openai": {
-      "model": "gpt-4-turbo",
-      "base_weight": 1.0,
-      "strength": "General reasoning, instruction following",
-      "weakness": "Can be jailbroken with sophisticated attacks"
-    },
-    "anthropic": {
-      "model": "claude-3-opus",
-      "base_weight": 1.0,
-      "strength": "Safety-focused, robust reasoning",
-      "weakness": "Slower response times"
-    },
     "gemini": {
       "model": "gemini-pro",
       "base_weight": 0.9,
       "strength": "Multimodal, fast processing",
       "weakness": "Less tested for adversarial safety"
     },
-    "deepseek": {
-      "model": "deepseek-chat",
-      "base_weight": 0.85,
-      "strength": "Cost-effective, maintains refusals well",
-      "weakness": "Newer model, less proven at scale"
-    },
     "groq": {
       "model": "llama-3-70b",
       "base_weight": 0.8,
       "strength": "Very fast inference, open-source",
       "weakness": "Less safety-focused training"
-    },
-    "cohere": {
-      "model": "command-r-plus",
-      "base_weight": 0.85,
-      "strength": "Enterprise-focused, RAG capabilities",
-      "weakness": "Less general-purpose"
     }
   },
   "weight_formula": "weight = base_weight × accuracy_score × availability_rate × (1 - false_positive_rate)",
